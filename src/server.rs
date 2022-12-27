@@ -98,7 +98,9 @@ async fn add_file_to_content(path: &Path) -> Result<Option<String>, std::io::Err
                 println!("ignoring file {:?} not supported", file_name);
                 return Ok(None);
             }
-            let file_extension = file_extension.to_str().expect("file_extension will always be a valid string since we check it above");
+            let file_extension = file_extension
+                .to_str()
+                .expect("file_extension will always be a valid string since we check it above");
             let mut hasher = std::collections::hash_map::DefaultHasher::new();
             file_name.hash(&mut hasher);
             let new_name = format!("{}.{}", hasher.finish(), file_extension);
