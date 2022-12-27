@@ -77,12 +77,14 @@ async fn generate_content(content_root: &Path) -> Result<Vec<String>, std::io::E
         .expect("expect iteration over content root to work")
         .flatten()
     {
-        content_files.push(add_file_to_content(&path.path()).await?);
+        if let Some(file_name) = add_file_to_content(&path.path()).await? {
+            content_files.push(file_name);
+        }
     }
     Ok(content_files)
 }
 
-async fn add_file_to_content(path: &Path) -> Result<String, std::io::Error> {
+async fn add_file_to_content(path: &Path) -> Result<Option<String>, std::io::Error> {
     let path_as_lossy_str = path.to_string_lossy();
     let file_name = path.file_stem().unwrap_or_else(|| {
         panic!(
@@ -90,25 +92,28 @@ async fn add_file_to_content(path: &Path) -> Result<String, std::io::Error> {
             path_as_lossy_str
         )
     });
-    let file_extension = path
-        .extension()
-        .unwrap_or_else(|| {
-            panic!(
-                "expect to have proper extension for file {}",
-                path_as_lossy_str
-            )
-        })
-        .to_str()
-        .unwrap_or_else(|| panic!("expect a valid extension for file {}", path_as_lossy_str));
-    if file_extension != "mp4" {
-        panic!("only mp4 files supported");
+    match path.extension() {
+        Some(file_extension) => {
+            if file_extension != "mp4" {
+                println!("ignoring file {:?} not supported", file_name);
+                return Ok(None);
+            }
+            let file_extension = file_extension.to_str().expect("file_extension will always be a valid string since we check it above");
+            let mut hasher = std::collections::hash_map::DefaultHasher::new();
+            file_name.hash(&mut hasher);
+            let new_name = format!("{}.{}", hasher.finish(), file_extension);
+            let destination = PathBuf::from(format!("./content/{}", new_name));
+            tokio::fs::copy(path, destination).await?;
+            Ok(Some(new_name))
+        }
+        None => {
+            println!(
+                "ignoring file {:?} due to improper file extension",
+                file_name
+            );
+            Ok(None)
+        }
     }
-    let mut hasher = std::collections::hash_map::DefaultHasher::new();
-    file_name.hash(&mut hasher);
-    let new_name = format!("{}.{}", hasher.finish(), file_extension);
-    let destination = PathBuf::from(format!("./content/{}", new_name));
-    tokio::fs::copy(path, destination).await?;
-    Ok(new_name)
 }
 
 async fn create_and_run_server(config: &Config) -> std::io::Result<()> {
