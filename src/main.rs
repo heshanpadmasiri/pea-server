@@ -17,7 +17,7 @@ fn test_body() -> String {
         <body>
 
             <h1>Pea server debug</h1>
-            <video width="320" height="240" autoplay muted>
+            <video controls width="320" height="240">
                 <source src="/files/11869_1080.mp4" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
