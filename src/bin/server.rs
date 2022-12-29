@@ -1,41 +1,62 @@
 use std::{
     hash::{Hash, Hasher},
+    net::{self, SocketAddr},
     path::{Path, PathBuf},
+    vec::IntoIter,
 };
 
 use actix_files as fs;
 use actix_web::{web, App, HttpRequest, HttpServer};
 use fs::NamedFile;
+use pea_server::log_normal;
 use tokio::{fs::File, io::AsyncWriteExt};
 
 struct Config {
-    address: (String, u16),
+    address: Box<dyn net::ToSocketAddrs<Iter = IntoIter<SocketAddr>>>,
     content_root: PathBuf,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            address: ("192.168.8.176".to_string(), 8080),
-            content_root: PathBuf::from("./files"),
-        }
-    }
 }
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    let config = Config::default();
+    let address = Box::new(
+        std::env::args()
+            .nth(1)
+            .unwrap_or_else(|| "192.168.8.176:8080".to_string()),
+    );
+    let content_root = PathBuf::from(
+        std::env::args()
+            .nth(2)
+            .unwrap_or_else(|| "./files".to_string()),
+    );
+    log_normal(&format!(
+        "trying to run server on address: http://{} with content at : {}",
+        address,
+        content_root.to_string_lossy()
+    ));
+    let config = Config {
+        address,
+        content_root,
+    };
     generate_static_page(&config).await?;
     create_and_run_server(&config).await
 }
 
 async fn generate_static_page(config: &Config) -> std::io::Result<()> {
     let content_path = PathBuf::from("./content");
+    log_normal(&format!(
+        "using :{} as the content directory",
+        content_path.to_string_lossy()
+    ));
     if content_path.exists() {
-        std::fs::remove_dir_all("./content")?;
+        std::fs::remove_dir_all(&content_path)?;
     }
-    std::fs::create_dir("./content")?;
+    std::fs::create_dir(&content_path)?;
+    log_normal("starting content generation");
     let content_files = generate_content(&config.content_root).await?;
+    log_normal(&format!(
+        "content generation completed with {} files",
+        content_files.len()
+    ));
     let video_tags: Vec<String> = content_files
         .iter()
         .map(|file_name| {
@@ -66,7 +87,7 @@ async fn generate_static_page(config: &Config) -> std::io::Result<()> {
     </html>
     "#
     );
-    let mut file = File::create("./content/index.html").await?;
+    let mut file = File::create(content_path.join("./index.html")).await?;
     file.write_all(body.as_bytes()).await?;
     Ok(())
 }
@@ -95,7 +116,7 @@ async fn add_file_to_content(path: &Path) -> Result<Option<String>, std::io::Err
     match path.extension() {
         Some(file_extension) => {
             if file_extension != "mp4" {
-                println!("ignoring file {:?} not supported", file_name);
+                log_normal(&format!("ignoring file {:?} not supported", file_name));
                 return Ok(None);
             }
             let file_extension = file_extension
@@ -109,22 +130,23 @@ async fn add_file_to_content(path: &Path) -> Result<Option<String>, std::io::Err
             Ok(Some(new_name))
         }
         None => {
-            println!(
+            log_normal(&format!(
                 "ignoring file {:?} due to improper file extension",
                 file_name
-            );
+            ));
             Ok(None)
         }
     }
 }
 
 async fn create_and_run_server(config: &Config) -> std::io::Result<()> {
+    log_normal(&format!("starting server at: {:?}", config.address.to_socket_addrs()));
     HttpServer::new(move || {
         App::new()
             .route("/", web::get().to(index))
             .service(fs::Files::new("/content", "./content").show_files_listing())
     })
-    .bind(config.address.clone())?
+    .bind(config.address.as_ref())?
     .run()
     .await
 }
