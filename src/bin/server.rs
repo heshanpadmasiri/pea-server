@@ -93,19 +93,21 @@ async fn generate_static_page(config: &Config) -> std::io::Result<()> {
 }
 
 async fn generate_content(content_root: &Path) -> Result<Vec<String>, std::io::Error> {
-    let mut content_files = Vec::new();
-    for path in std::fs::read_dir(content_root)
+    let handles = std::fs::read_dir(content_root)
         .expect("expect iteration over content root to work")
         .flatten()
-    {
-        if let Some(file_name) = add_file_to_content(&path.path()).await? {
+        .map(|path| tokio::spawn(add_file_to_content(path.path())))
+        .collect::<Vec<_>>();
+    let mut content_files = Vec::new();
+    for handle in handles {
+        if let Ok(Some(file_name)) = handle.await? {
             content_files.push(file_name);
         }
     }
     Ok(content_files)
 }
 
-async fn add_file_to_content(path: &Path) -> Result<Option<String>, std::io::Error> {
+async fn add_file_to_content(path: PathBuf) -> Result<Option<String>, std::io::Error> {
     let path_as_lossy_str = path.to_string_lossy();
     let file_name = path.file_stem().unwrap_or_else(|| {
         panic!(
