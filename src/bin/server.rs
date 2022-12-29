@@ -140,7 +140,10 @@ async fn add_file_to_content(path: &Path) -> Result<Option<String>, std::io::Err
 }
 
 async fn create_and_run_server(config: &Config) -> std::io::Result<()> {
-    log_normal(&format!("starting server at: {:?}", config.address.to_socket_addrs()));
+    log_normal(&format!(
+        "starting server at: {:?}",
+        config.address.to_socket_addrs()
+    ));
     HttpServer::new(move || {
         App::new()
             .route("/", web::get().to(index))
