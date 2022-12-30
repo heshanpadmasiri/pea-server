@@ -6,7 +6,7 @@ use std::{
 };
 
 use actix_files as fs;
-use actix_web::{web, App, HttpRequest, HttpServer};
+use actix_web::{dev::Server, web, App, HttpRequest, HttpServer};
 use fs::NamedFile;
 use pea_server::log_normal;
 use tokio::{fs::File, io::AsyncWriteExt};
@@ -38,7 +38,7 @@ async fn main() -> std::io::Result<()> {
         content_root,
     };
     generate_static_page(&config).await?;
-    create_and_run_server(&config).await
+    create_and_run_server(&config)?.await
 }
 
 async fn generate_static_page(config: &Config) -> std::io::Result<()> {
@@ -139,19 +139,18 @@ async fn add_file_to_content(path: &Path) -> Result<Option<String>, std::io::Err
     }
 }
 
-async fn create_and_run_server(config: &Config) -> std::io::Result<()> {
+fn create_and_run_server(config: &Config) -> std::io::Result<Server> {
     log_normal(&format!(
         "starting server at: {:?}",
         config.address.to_socket_addrs()
     ));
-    HttpServer::new(move || {
+    let server = HttpServer::new(move || {
         App::new()
             .route("/", web::get().to(index))
             .service(fs::Files::new("/content", "./content").show_files_listing())
     })
-    .bind(config.address.as_ref())?
-    .run()
-    .await
+    .bind(config.address.as_ref())?;
+    Ok(server.run())
 }
 
 async fn index(_req: HttpRequest) -> actix_web::Result<NamedFile> {
@@ -161,20 +160,32 @@ async fn index(_req: HttpRequest) -> actix_web::Result<NamedFile> {
 
 #[cfg(test)]
 mod tests {
-    use std::{path::PathBuf, thread::{spawn, self}};
+    use std::path::PathBuf;
 
-    use tokio::runtime::Runtime;
+    use actix_web::{http::header::ContentType, test};
 
-    use crate::{Config, create_and_run_server};
+    use crate::{create_and_run_server, index, Config};
 
-    #[test]
-    fn can_start_server() {
-        spawn(|| {
-            let config = Config { address: Box::new("localhost:5000"), content_root: PathBuf::from("./test_content")};
-            let server_future = create_and_run_server(&config);
-            let server_rt = Runtime::new().unwrap();
-            server_rt.block_on(server_future).expect("expect server startup to succeed");
-        });
-        thread::sleep(std::time::Duration::new(5, 0));
+    #[tokio::test]
+    async fn can_start_server() {
+        tokio::spawn(async move {
+            let config = Config {
+                address: Box::new(format!("localhost:{}", 5000)),
+                content_root: PathBuf::from("./test_content"),
+            };
+            create_and_run_server(&config)
+                .expect("expect server startup to succeed")
+                .await
+                .expect("expect sever running to succeed");
+        })
+        .abort()
+    }
+
+    #[actix_web::test]
+    async fn can_get_the_index_page() {
+        let req = test::TestRequest::default()
+            .insert_header(ContentType::plaintext())
+            .to_http_request();
+        index(req).await.expect("msg");
     }
 }
