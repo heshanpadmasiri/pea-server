@@ -12,7 +12,7 @@ use pea_server::log_normal;
 use tokio::{fs::File, io::AsyncWriteExt};
 
 struct Config {
-    address: Box<dyn net::ToSocketAddrs<Iter = IntoIter<SocketAddr>>>,
+    address: Box<dyn net::ToSocketAddrs<Iter = IntoIter<SocketAddr>> + Send + Sync>,
     content_root: PathBuf,
 }
 
@@ -157,4 +157,24 @@ async fn create_and_run_server(config: &Config) -> std::io::Result<()> {
 async fn index(_req: HttpRequest) -> actix_web::Result<NamedFile> {
     let path: PathBuf = "./content/index.html".parse().unwrap();
     Ok(NamedFile::open(path)?)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{path::PathBuf, thread::{spawn, self}};
+
+    use tokio::runtime::Runtime;
+
+    use crate::{Config, create_and_run_server};
+
+    #[test]
+    fn can_start_server() {
+        spawn(|| {
+            let config = Config { address: Box::new("localhost:5000"), content_root: PathBuf::from("./test_content")};
+            let server_future = create_and_run_server(&config);
+            let server_rt = Runtime::new().unwrap();
+            server_rt.block_on(server_future).expect("expect server startup to succeed");
+        });
+        thread::sleep(std::time::Duration::new(5, 0));
+    }
 }
