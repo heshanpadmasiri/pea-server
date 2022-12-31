@@ -6,7 +6,7 @@ use std::{
 };
 
 use actix_files as fs;
-use actix_web::{dev::Server, web, App, HttpRequest, HttpServer};
+use actix_web::{dev::Server, web, App, HttpRequest, HttpResponse, HttpServer};
 use fs::NamedFile;
 use pea_server::log_normal;
 use tokio::{fs::File, io::AsyncWriteExt};
@@ -147,6 +147,7 @@ fn create_and_run_server(config: &Config) -> std::io::Result<Server> {
     let server = HttpServer::new(move || {
         App::new()
             .route("/", web::get().to(index))
+            .route("/files", web::get().to(get_files))
             .service(fs::Files::new("/content", "./content").show_files_listing())
     })
     .bind(config.address.as_ref())?;
@@ -158,13 +159,21 @@ async fn index(_req: HttpRequest) -> actix_web::Result<NamedFile> {
     Ok(NamedFile::open(path)?)
 }
 
+async fn get_files() -> HttpResponse {
+    // TODO:
+    HttpResponse::Ok().body("TODO")
+}
+
 #[cfg(test)]
 mod tests {
     use std::{fs::File, io::Write, path::PathBuf};
 
-    use actix_web::{http::header::ContentType, test};
+    use actix_web::{
+        http::{self, header::ContentType},
+        test,
+    };
 
-    use crate::{create_and_run_server, index, Config};
+    use crate::{create_and_run_server, get_files, index, Config};
 
     #[tokio::test]
     async fn can_start_server() {
@@ -187,7 +196,9 @@ mod tests {
         let req = test::TestRequest::default()
             .insert_header(ContentType::plaintext())
             .to_http_request();
-        index(req).await.expect("msg");
+        index(req)
+            .await
+            .expect("expect getting index.html to succeed");
     }
 
     // FIXME: once we have the proper client building pipeline that needs to be triggered before,
@@ -201,5 +212,11 @@ mod tests {
         std::fs::create_dir(path)?;
         let mut index_file = File::create(path.join("./index.html"))?;
         index_file.write_all(b"<html></html>")
+    }
+
+    #[actix_web::test]
+    async fn can_get_files() {
+        let resp = get_files().await;
+        assert_eq!(resp.status(), http::StatusCode::OK);
     }
 }
