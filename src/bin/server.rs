@@ -174,9 +174,13 @@ mod tests {
     };
 
     use crate::{create_and_run_server, get_files, index, Config};
+    use std::sync::Once;
+
+    static INIT: Once = Once::new();
 
     #[tokio::test]
     async fn can_start_server() {
+        initialize();
         tokio::spawn(async move {
             let config = Config {
                 address: Box::new(format!("localhost:{}", 5000)),
@@ -192,7 +196,7 @@ mod tests {
 
     #[actix_web::test]
     async fn can_get_the_index_page() {
-        create_dummy_content_dir().expect("expect dummy content creation to succeed");
+        initialize();
         let req = test::TestRequest::default()
             .insert_header(ContentType::plaintext())
             .to_http_request();
@@ -201,22 +205,25 @@ mod tests {
             .expect("expect getting index.html to succeed");
     }
 
-    // FIXME: once we have the proper client building pipeline that needs to be triggered before,
-    // every test properly creating the content dir
-    fn create_dummy_content_dir() -> Result<(), std::io::Error> {
-        let content_path = PathBuf::from("./content");
-        let path = &content_path;
-        if path.exists() {
-            std::fs::remove_dir_all(path)?;
-        }
-        std::fs::create_dir(path)?;
-        let mut index_file = File::create(path.join("./index.html"))?;
-        index_file.write_all(b"<html></html>")
-    }
-
     #[actix_web::test]
     async fn can_get_files() {
+        initialize();
         let resp = get_files().await;
         assert_eq!(resp.status(), http::StatusCode::OK);
+    }
+
+    // FIXME: once we have the proper client building pipeline that needs to be triggered before,
+    // every test properly creating the content dir
+    fn initialize() {
+        INIT.call_once(|| {
+            let content_path = PathBuf::from("./content");
+            let path = &content_path;
+            if path.exists() {
+                std::fs::remove_dir_all(path).expect("expect cleaning up content dir to succeed");
+            }
+            std::fs::create_dir(path).expect("expect creating content dir to succeed");
+            let mut index_file = File::create(path.join("./index.html")).expect("expect creating index.html to succeed");
+            index_file.write_all(b"<html></html>").expect("expect writing to index.html to succeed")
+        })
     }
 }
