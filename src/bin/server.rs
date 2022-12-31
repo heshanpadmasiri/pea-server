@@ -160,7 +160,7 @@ async fn index(_req: HttpRequest) -> actix_web::Result<NamedFile> {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
+    use std::{fs::File, io::Write, path::PathBuf};
 
     use actix_web::{http::header::ContentType, test};
 
@@ -183,9 +183,23 @@ mod tests {
 
     #[actix_web::test]
     async fn can_get_the_index_page() {
+        create_dummy_content_dir().expect("expect dummy content creation to succeed");
         let req = test::TestRequest::default()
             .insert_header(ContentType::plaintext())
             .to_http_request();
         index(req).await.expect("msg");
+    }
+
+    // FIXME: once we have the proper client building pipeline that needs to be triggered before,
+    // every test properly creating the content dir
+    fn create_dummy_content_dir() -> Result<(), std::io::Error> {
+        let content_path = PathBuf::from("./content");
+        let path = &content_path;
+        if path.exists() {
+            std::fs::remove_dir_all(path)?;
+        }
+        std::fs::create_dir(path)?;
+        let mut index_file = File::create(path.join("./index.html"))?;
+        index_file.write_all(b"<html></html>")
     }
 }
