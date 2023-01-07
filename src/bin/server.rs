@@ -45,6 +45,7 @@ async fn main() -> std::io::Result<()> {
     create_and_run_server(&config)?.await
 }
 
+// TODO: remove this
 async fn generate_static_page(config: &Config) -> std::io::Result<()> {
     let content_path = PathBuf::from(SERVER_CONTENT);
     log_normal(&format!(
@@ -149,8 +150,7 @@ fn create_and_run_server(config: &Config) -> std::io::Result<Server> {
         config.address.to_socket_addrs()
     ));
     let server = HttpServer::new(move || {
-        // TODO: only allow get requests [from the same origin]
-        let cors = Cors::default().allow_any_origin().allow_any_method();
+        let cors = Cors::permissive();
         App::new()
             .wrap(cors)
             .route("/", web::get().to(index))
