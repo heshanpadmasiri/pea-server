@@ -9,7 +9,7 @@ use actix_files as fs;
 use actix_web::{dev::Server, web, App, HttpRequest, HttpResponse, HttpServer};
 use fs::NamedFile;
 use pea_server::log_normal;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use tokio::{fs::File, io::AsyncWriteExt};
 
 struct Config {
@@ -172,22 +172,64 @@ struct FileData {
 async fn get_files() -> HttpResponse {
     let files = get_all_files();
     let body = serde_json::to_string(&files).unwrap();
-    HttpResponse::Ok().content_type("application/json").body(body)
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .body(body)
 }
 
 fn get_all_files() -> Vec<FileData> {
-    vec![]
+    let mut files = vec![];
+    for path in std::fs::read_dir(PathBuf::from(SERVER_CONTENT))
+        .expect("expect iteration over server content to work")
+        .flatten()
+        .map(|each| each.path())
+    {
+        if path.is_file()
+            && path
+                .extension()
+                .expect("expect valid file extension")
+                .to_string_lossy()
+                == "mp4"
+        {
+            files.push(file_data(&path));
+        }
+    }
+    files
+}
+
+fn file_data(path: &Path) -> FileData {
+    let name = path
+        .file_name()
+        .expect("expect filename")
+        .to_str()
+        .expect("expect valid file name")
+        .to_string();
+    let id = path
+        .file_stem()
+        .expect("expect file stem")
+        .to_str()
+        .expect("expect valid file name")
+        .parse::<u64>()
+        .unwrap();
+    let ty = path
+        .extension()
+        .expect("expect valid file extension")
+        .to_str()
+        .expect("expect properly formatted extension")
+        .to_string();
+    FileData { name, id, ty }
 }
 
 #[cfg(test)]
 mod tests {
     use std::{fs::File, io::Write, path::PathBuf};
 
-    use actix_web::{
-        http::{self, header::ContentType},
-        test, body::{to_bytes},
-    };
     use crate::{create_and_run_server, get_files, index, Config, FileData};
+    use actix_web::{
+        body::to_bytes,
+        http::{self, header::ContentType},
+        test,
+    };
     use std::sync::Once;
 
     static INIT: Once = Once::new();
@@ -225,9 +267,20 @@ mod tests {
         let resp = get_files().await;
         assert_eq!(resp.status(), http::StatusCode::OK);
         let actual = to_bytes(resp.into_body()).await.unwrap();
-        let actual:Vec<FileData> = serde_json::from_slice(&actual).unwrap();
+        let actual: Vec<FileData> = serde_json::from_slice(&actual).unwrap();
 
-        let expected:Vec<FileData> = vec![];
+        let expected: Vec<FileData> = vec![
+            FileData {
+                name: "1.mp4".to_string(),
+                id: 1,
+                ty: "mp4".to_string(),
+            },
+            FileData {
+                name: "2.mp4".to_string(),
+                id: 2,
+                ty: "mp4".to_string(),
+            },
+        ];
         assert_eq!(actual, expected)
     }
 
