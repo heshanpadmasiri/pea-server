@@ -7,11 +7,9 @@ use std::{
 
 use actix_cors::Cors;
 use actix_files as fs;
-use actix_web::{dev::Server, web, App, HttpRequest, HttpResponse, HttpServer};
-use fs::NamedFile;
+use actix_web::{dev::Server, web, App, HttpResponse, HttpServer};
 use pea_server::log_normal;
 use serde::{Deserialize, Serialize};
-use tokio::{fs::File, io::AsyncWriteExt};
 
 struct Config {
     address: Box<dyn net::ToSocketAddrs<Iter = IntoIter<SocketAddr>> + Send + Sync>,
@@ -41,12 +39,11 @@ async fn main() -> std::io::Result<()> {
         address,
         content_root,
     };
-    generate_static_page(&config).await?;
+    generate_static_content(&config).await?;
     create_and_run_server(&config)?.await
 }
 
-// TODO: remove this
-async fn generate_static_page(config: &Config) -> std::io::Result<()> {
+async fn generate_static_content(config: &Config) -> std::io::Result<()> {
     let content_path = PathBuf::from(SERVER_CONTENT);
     log_normal(&format!(
         "using :{} as the content directory",
@@ -62,38 +59,6 @@ async fn generate_static_page(config: &Config) -> std::io::Result<()> {
         "content generation completed with {} files",
         content_files.len()
     ));
-    let video_tags: Vec<String> = content_files
-        .iter()
-        .map(|file_name| {
-            format!(
-                r#"
-            <video controls width="320" height="240">
-                <source src="/content/{}" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
-        "#,
-                file_name
-            )
-        })
-        .collect();
-    let content_section = video_tags.join("\n");
-    let body = format!(
-        r#"
-    <!DOCTYPE html>
-    <html>
-        <head>
-            <title>Pea server</title>
-        </head>
-        <body>
-
-            <h1>Pea server debug</h1>
-            {content_section}
-        </body>
-    </html>
-    "#
-    );
-    let mut file = File::create(content_path.join("./index.html")).await?;
-    file.write_all(body.as_bytes()).await?;
     Ok(())
 }
 
@@ -153,17 +118,11 @@ fn create_and_run_server(config: &Config) -> std::io::Result<Server> {
         let cors = Cors::permissive();
         App::new()
             .wrap(cors)
-            .route("/", web::get().to(index))
             .route("/files", web::get().to(get_files))
             .service(fs::Files::new("/content", "./content").show_files_listing())
     })
     .bind(config.address.as_ref())?;
     Ok(server.run())
-}
-
-async fn index(_req: HttpRequest) -> actix_web::Result<NamedFile> {
-    let path: PathBuf = "./content/index.html".parse().unwrap();
-    Ok(NamedFile::open(path)?)
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -226,13 +185,12 @@ fn file_data(path: &Path) -> FileData {
 
 #[cfg(test)]
 mod tests {
-    use std::{fs::File, io::Write, path::PathBuf};
+    use std::{fs::File, path::PathBuf};
 
-    use crate::{create_and_run_server, get_files, index, Config, FileData};
+    use crate::{create_and_run_server, get_files, Config, FileData};
     use actix_web::{
         body::to_bytes,
-        http::{self, header::ContentType},
-        test,
+        http::{self},
     };
     use std::sync::Once;
 
@@ -252,17 +210,6 @@ mod tests {
                 .expect("expect sever running to succeed");
         })
         .abort()
-    }
-
-    #[actix_web::test]
-    async fn can_get_the_index_page() {
-        initialize();
-        let req = test::TestRequest::default()
-            .insert_header(ContentType::plaintext())
-            .to_http_request();
-        index(req)
-            .await
-            .expect("expect getting index.html to succeed");
     }
 
     #[actix_web::test]
@@ -298,11 +245,6 @@ mod tests {
                 std::fs::remove_dir_all(path).expect("expect cleaning up content dir to succeed");
             }
             std::fs::create_dir(path).expect("expect creating content dir to succeed");
-            let mut index_file = File::create(path.join("./index.html"))
-                .expect("expect creating index.html to succeed");
-            index_file
-                .write_all(b"<html></html>")
-                .expect("expect writing to index.html to succeed");
             let content_files = ["1.mp4", "2.mp4", "3.mkv", "6.txt"];
             for each in content_files {
                 File::create(path.join(format!("./{each}")))
