@@ -9,12 +9,15 @@ use actix_files as fs;
 use actix_web::{dev::Server, web, App, HttpRequest, HttpResponse, HttpServer};
 use fs::NamedFile;
 use pea_server::log_normal;
+use serde::{Serialize, Deserialize};
 use tokio::{fs::File, io::AsyncWriteExt};
 
 struct Config {
     address: Box<dyn net::ToSocketAddrs<Iter = IntoIter<SocketAddr>> + Send + Sync>,
     content_root: PathBuf,
 }
+
+const SERVER_CONTENT: &str = "./content";
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -42,7 +45,7 @@ async fn main() -> std::io::Result<()> {
 }
 
 async fn generate_static_page(config: &Config) -> std::io::Result<()> {
-    let content_path = PathBuf::from("./content");
+    let content_path = PathBuf::from(SERVER_CONTENT);
     log_normal(&format!(
         "using :{} as the content directory",
         content_path.to_string_lossy()
@@ -125,7 +128,7 @@ async fn add_file_to_content(path: &Path) -> Result<Option<String>, std::io::Err
             let mut hasher = std::collections::hash_map::DefaultHasher::new();
             file_name.hash(&mut hasher);
             let new_name = format!("{}.{}", hasher.finish(), file_extension);
-            let destination = PathBuf::from(format!("./content/{}", new_name));
+            let destination = PathBuf::from(format!("{SERVER_CONTENT}/{}", new_name));
             tokio::fs::copy(path, destination).await?;
             Ok(Some(new_name))
         }
@@ -159,9 +162,21 @@ async fn index(_req: HttpRequest) -> actix_web::Result<NamedFile> {
     Ok(NamedFile::open(path)?)
 }
 
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+struct FileData {
+    name: String,
+    id: u64,
+    ty: String,
+}
+
 async fn get_files() -> HttpResponse {
-    // TODO:
-    HttpResponse::Ok().body("TODO")
+    let files = get_all_files();
+    let body = serde_json::to_string(&files).unwrap();
+    HttpResponse::Ok().content_type("application/json").body(body)
+}
+
+fn get_all_files() -> Vec<FileData> {
+    vec![]
 }
 
 #[cfg(test)]
@@ -170,10 +185,9 @@ mod tests {
 
     use actix_web::{
         http::{self, header::ContentType},
-        test,
+        test, body::{to_bytes},
     };
-
-    use crate::{create_and_run_server, get_files, index, Config};
+    use crate::{create_and_run_server, get_files, index, Config, FileData};
     use std::sync::Once;
 
     static INIT: Once = Once::new();
@@ -210,6 +224,11 @@ mod tests {
         initialize();
         let resp = get_files().await;
         assert_eq!(resp.status(), http::StatusCode::OK);
+        let actual = to_bytes(resp.into_body()).await.unwrap();
+        let actual:Vec<FileData> = serde_json::from_slice(&actual).unwrap();
+
+        let expected:Vec<FileData> = vec![];
+        assert_eq!(actual, expected)
     }
 
     // FIXME: once we have the proper client building pipeline that needs to be triggered before,
@@ -222,8 +241,16 @@ mod tests {
                 std::fs::remove_dir_all(path).expect("expect cleaning up content dir to succeed");
             }
             std::fs::create_dir(path).expect("expect creating content dir to succeed");
-            let mut index_file = File::create(path.join("./index.html")).expect("expect creating index.html to succeed");
-            index_file.write_all(b"<html></html>").expect("expect writing to index.html to succeed")
+            let mut index_file = File::create(path.join("./index.html"))
+                .expect("expect creating index.html to succeed");
+            index_file
+                .write_all(b"<html></html>")
+                .expect("expect writing to index.html to succeed");
+            let content_files = ["1.mp4", "2.mp4", "3.mkv", "6.txt"];
+            for each in content_files {
+                File::create(path.join(format!("./{each}")))
+                    .unwrap_or_else(|_| panic!("expect creating {} to succeed", each));
+            }
         })
     }
 }
