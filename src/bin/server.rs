@@ -5,6 +5,7 @@ use std::{
     vec::IntoIter,
 };
 
+use actix_cors::Cors;
 use actix_files as fs;
 use actix_web::{dev::Server, web, App, HttpRequest, HttpResponse, HttpServer};
 use fs::NamedFile;
@@ -148,7 +149,10 @@ fn create_and_run_server(config: &Config) -> std::io::Result<Server> {
         config.address.to_socket_addrs()
     ));
     let server = HttpServer::new(move || {
+        // TODO: only allow get requests [from the same origin]
+        let cors = Cors::default().allow_any_origin().allow_any_method();
         App::new()
+            .wrap(cors)
             .route("/", web::get().to(index))
             .route("/files", web::get().to(get_files))
             .service(fs::Files::new("/content", "./content").show_files_listing())
