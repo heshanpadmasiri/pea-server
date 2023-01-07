@@ -1,14 +1,15 @@
 import axios from "axios";
 import React from "react";
 import "./App.css";
+import config from "./config.json";
 
 function video_tag(filename) {
-  const src = "http://localhost:8081/content/" + filename;
-  return(
-    <video controls width={320} height={240}>
+  const src = `${config.SERVER_URL}/content/${filename}`;
+  return (
+    <video controls>
       <source src={src} type="video/mp4"></source>
     </video>
-  )
+  );
 }
 class App extends React.Component {
   constructor(props) {
@@ -16,7 +17,7 @@ class App extends React.Component {
     this.state = {
       loading: true,
       error: false,
-      files: []
+      files: [],
     };
   }
 
@@ -25,9 +26,8 @@ class App extends React.Component {
   }
 
   get_all_files() {
-    // TODO: url must be take as a config value
     axios
-      .get("http://localhost:8081/files")
+      .get(`${config.SERVER_URL}/files`)
       .then((res) => {
         this.setState({ loading: false, error: false, files: res.data });
       })
@@ -52,7 +52,11 @@ class App extends React.Component {
         </div>
       );
     }
-    const fileItems = files.map((each) => <div className="grid-item" key={each.id}>{video_tag(each.name)}</div>);
+    const fileItems = files.map((each) => (
+      <div className="grid-item" key={each.id}>
+        {video_tag(each.name)}
+      </div>
+    ));
     return (
       <div className="App">
         <h1> Pea server </h1>

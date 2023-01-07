@@ -15,3 +15,8 @@ code {
 .grid-container {
   display: grid;
 }
+
+video {
+  height: 20%;
+  width: 20%;
+}
