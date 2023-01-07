@@ -6,15 +6,18 @@ use std::{
 };
 
 use actix_files as fs;
-use actix_web::{dev::Server, web, App, HttpRequest, HttpServer};
+use actix_web::{dev::Server, web, App, HttpRequest, HttpResponse, HttpServer};
 use fs::NamedFile;
 use pea_server::log_normal;
+use serde::{Deserialize, Serialize};
 use tokio::{fs::File, io::AsyncWriteExt};
 
 struct Config {
     address: Box<dyn net::ToSocketAddrs<Iter = IntoIter<SocketAddr>> + Send + Sync>,
     content_root: PathBuf,
 }
+
+const SERVER_CONTENT: &str = "./content";
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -42,7 +45,7 @@ async fn main() -> std::io::Result<()> {
 }
 
 async fn generate_static_page(config: &Config) -> std::io::Result<()> {
-    let content_path = PathBuf::from("./content");
+    let content_path = PathBuf::from(SERVER_CONTENT);
     log_normal(&format!(
         "using :{} as the content directory",
         content_path.to_string_lossy()
@@ -125,7 +128,7 @@ async fn add_file_to_content(path: &Path) -> Result<Option<String>, std::io::Err
             let mut hasher = std::collections::hash_map::DefaultHasher::new();
             file_name.hash(&mut hasher);
             let new_name = format!("{}.{}", hasher.finish(), file_extension);
-            let destination = PathBuf::from(format!("./content/{}", new_name));
+            let destination = PathBuf::from(format!("{SERVER_CONTENT}/{}", new_name));
             tokio::fs::copy(path, destination).await?;
             Ok(Some(new_name))
         }
@@ -147,6 +150,7 @@ fn create_and_run_server(config: &Config) -> std::io::Result<Server> {
     let server = HttpServer::new(move || {
         App::new()
             .route("/", web::get().to(index))
+            .route("/files", web::get().to(get_files))
             .service(fs::Files::new("/content", "./content").show_files_listing())
     })
     .bind(config.address.as_ref())?;
@@ -158,16 +162,81 @@ async fn index(_req: HttpRequest) -> actix_web::Result<NamedFile> {
     Ok(NamedFile::open(path)?)
 }
 
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+struct FileData {
+    name: String,
+    id: u64,
+    ty: String,
+}
+
+async fn get_files() -> HttpResponse {
+    let files = get_all_files();
+    let body = serde_json::to_string(&files).unwrap();
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .body(body)
+}
+
+fn get_all_files() -> Vec<FileData> {
+    let mut files = vec![];
+    for path in std::fs::read_dir(PathBuf::from(SERVER_CONTENT))
+        .expect("expect iteration over server content to work")
+        .flatten()
+        .map(|each| each.path())
+    {
+        if path.is_file()
+            && path
+                .extension()
+                .expect("expect valid file extension")
+                .to_string_lossy()
+                == "mp4"
+        {
+            files.push(file_data(&path));
+        }
+    }
+    files
+}
+
+fn file_data(path: &Path) -> FileData {
+    let name = path
+        .file_name()
+        .expect("expect filename")
+        .to_str()
+        .expect("expect valid file name")
+        .to_string();
+    let id = path
+        .file_stem()
+        .expect("expect file stem")
+        .to_str()
+        .expect("expect valid file name")
+        .parse::<u64>()
+        .unwrap();
+    let ty = path
+        .extension()
+        .expect("expect valid file extension")
+        .to_str()
+        .expect("expect properly formatted extension")
+        .to_string();
+    FileData { name, id, ty }
+}
+
 #[cfg(test)]
 mod tests {
     use std::{fs::File, io::Write, path::PathBuf};
 
-    use actix_web::{http::header::ContentType, test};
+    use crate::{create_and_run_server, get_files, index, Config, FileData};
+    use actix_web::{
+        body::to_bytes,
+        http::{self, header::ContentType},
+        test,
+    };
+    use std::sync::Once;
 
-    use crate::{create_and_run_server, index, Config};
+    static INIT: Once = Once::new();
 
     #[tokio::test]
     async fn can_start_server() {
+        initialize();
         tokio::spawn(async move {
             let config = Config {
                 address: Box::new(format!("localhost:{}", 5000)),
@@ -183,23 +252,58 @@ mod tests {
 
     #[actix_web::test]
     async fn can_get_the_index_page() {
-        create_dummy_content_dir().expect("expect dummy content creation to succeed");
+        initialize();
         let req = test::TestRequest::default()
             .insert_header(ContentType::plaintext())
             .to_http_request();
-        index(req).await.expect("msg");
+        index(req)
+            .await
+            .expect("expect getting index.html to succeed");
+    }
+
+    #[actix_web::test]
+    async fn can_get_files() {
+        initialize();
+        let resp = get_files().await;
+        assert_eq!(resp.status(), http::StatusCode::OK);
+        let actual = to_bytes(resp.into_body()).await.unwrap();
+        let actual: Vec<FileData> = serde_json::from_slice(&actual).unwrap();
+
+        let expected: Vec<FileData> = vec![
+            FileData {
+                name: "1.mp4".to_string(),
+                id: 1,
+                ty: "mp4".to_string(),
+            },
+            FileData {
+                name: "2.mp4".to_string(),
+                id: 2,
+                ty: "mp4".to_string(),
+            },
+        ];
+        assert_eq!(actual, expected)
     }
 
     // FIXME: once we have the proper client building pipeline that needs to be triggered before,
     // every test properly creating the content dir
-    fn create_dummy_content_dir() -> Result<(), std::io::Error> {
-        let content_path = PathBuf::from("./content");
-        let path = &content_path;
-        if path.exists() {
-            std::fs::remove_dir_all(path)?;
-        }
-        std::fs::create_dir(path)?;
-        let mut index_file = File::create(path.join("./index.html"))?;
-        index_file.write_all(b"<html></html>")
+    fn initialize() {
+        INIT.call_once(|| {
+            let content_path = PathBuf::from("./content");
+            let path = &content_path;
+            if path.exists() {
+                std::fs::remove_dir_all(path).expect("expect cleaning up content dir to succeed");
+            }
+            std::fs::create_dir(path).expect("expect creating content dir to succeed");
+            let mut index_file = File::create(path.join("./index.html"))
+                .expect("expect creating index.html to succeed");
+            index_file
+                .write_all(b"<html></html>")
+                .expect("expect writing to index.html to succeed");
+            let content_files = ["1.mp4", "2.mp4", "3.mkv", "6.txt"];
+            for each in content_files {
+                File::create(path.join(format!("./{each}")))
+                    .unwrap_or_else(|_| panic!("expect creating {} to succeed", each));
+            }
+        })
     }
 }
