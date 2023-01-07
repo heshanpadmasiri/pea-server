@@ -2,6 +2,14 @@ import axios from "axios";
 import React from "react";
 import "./App.css";
 
+function video_tag(filename) {
+  const src = "http://localhost:8081/content/" + filename;
+  return(
+    <video controls width={320} height={240}>
+      <source src={src} type="video/mp4"></source>
+    </video>
+  )
+}
 class App extends React.Component {
   constructor(props) {
     super(props);
@@ -44,11 +52,11 @@ class App extends React.Component {
         </div>
       );
     }
-    const fileItems = files.map((each) => <li key={each.id}>{each.name}</li>);
+    const fileItems = files.map((each) => <div className="grid-item" key={each.id}>{video_tag(each.name)}</div>);
     return (
       <div className="App">
         <h1> Pea server </h1>
-        <ul>{fileItems}</ul>
+        <div className="gird-container">{fileItems}</div>
       </div>
     );
   }
