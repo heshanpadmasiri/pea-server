@@ -8,7 +8,7 @@ use std::{
 use actix_cors::Cors;
 use actix_files as fs;
 use actix_web::{dev::Server, web, App, HttpResponse, HttpServer};
-use pea_server::log_normal;
+use pea_server::{log_normal, copy_files};
 use serde::{Deserialize, Serialize};
 
 struct Config {
@@ -39,11 +39,11 @@ async fn main() -> std::io::Result<()> {
         address,
         content_root,
     };
-    generate_static_content(&config).await?;
+    generate_static_content(&config)?;
     create_and_run_server(&config)?.await
 }
 
-async fn generate_static_content(config: &Config) -> std::io::Result<()> {
+fn generate_static_content(config: &Config) -> std::io::Result<()> {
     let content_path = PathBuf::from(SERVER_CONTENT);
     log_normal(&format!(
         "using :{} as the content directory",
@@ -54,28 +54,44 @@ async fn generate_static_content(config: &Config) -> std::io::Result<()> {
     }
     std::fs::create_dir(&content_path)?;
     log_normal("starting content generation");
-    let content_files = generate_content(&config.content_root).await?;
+    let content_files = generate_content(&config.content_root)?;
     log_normal(&format!(
         "content generation completed with {} files",
         content_files.len()
     ));
+    let index_content = PathBuf::from("./pea-client/build/");
+    copy_index_content(&index_content)?;
     Ok(())
 }
 
-async fn generate_content(content_root: &Path) -> Result<Vec<String>, std::io::Error> {
+fn copy_index_content(index_content_path: &Path) -> std::io::Result<()> {
+    if !index_content_path.exists() && !index_content_path.is_dir() {
+        panic!("failed to find index content directory at {}", index_content_path.to_string_lossy());
+    }
+    let destination = PathBuf::from(format!("{SERVER_CONTENT}/"));
+    for path in std::fs::read_dir(index_content_path)
+        .expect("expect iteration over content root to work")
+        .flatten()
+    {
+        copy_files(&path.path(), &destination )?;
+    }
+    Ok(())
+}
+
+fn generate_content(content_root: &Path) -> Result<Vec<String>, std::io::Error> {
     let mut content_files = Vec::new();
     for path in std::fs::read_dir(content_root)
         .expect("expect iteration over content root to work")
         .flatten()
     {
-        if let Some(file_name) = add_file_to_content(&path.path()).await? {
+        if let Some(file_name) = add_content(&path.path())? {
             content_files.push(file_name);
         }
     }
     Ok(content_files)
 }
 
-async fn add_file_to_content(path: &Path) -> Result<Option<String>, std::io::Error> {
+fn add_content(path: &Path) -> Result<Option<String>, std::io::Error> {
     let path_as_lossy_str = path.to_string_lossy();
     let file_name = path.file_stem().unwrap_or_else(|| {
         panic!(
@@ -96,7 +112,7 @@ async fn add_file_to_content(path: &Path) -> Result<Option<String>, std::io::Err
             file_name.hash(&mut hasher);
             let new_name = format!("{}.{}", hasher.finish(), file_extension);
             let destination = PathBuf::from(format!("{SERVER_CONTENT}/{}", new_name));
-            tokio::fs::copy(path, destination).await?;
+            std::fs::copy(path, destination)?;
             Ok(Some(new_name))
         }
         None => {
