@@ -7,7 +7,8 @@ use std::{
 
 use actix_cors::Cors;
 use actix_files as fs;
-use actix_web::{dev::Server, web, App, HttpResponse, HttpServer};
+use actix_web::{dev::Server, web, App, HttpRequest, HttpResponse, HttpServer};
+use fs::NamedFile;
 use pea_server::log_normal;
 use serde::{Deserialize, Serialize};
 
@@ -39,22 +40,18 @@ async fn main() -> std::io::Result<()> {
         address,
         content_root,
     };
-    generate_static_content(&config).await?;
+    generate_static_content(&config)?;
     create_and_run_server(&config)?.await
 }
 
-async fn generate_static_content(config: &Config) -> std::io::Result<()> {
+fn generate_static_content(config: &Config) -> std::io::Result<()> {
     let content_path = PathBuf::from(SERVER_CONTENT);
     log_normal(&format!(
         "using :{} as the content directory",
         content_path.to_string_lossy()
     ));
-    if content_path.exists() {
-        std::fs::remove_dir_all(&content_path)?;
-    }
-    std::fs::create_dir(&content_path)?;
     log_normal("starting content generation");
-    let content_files = generate_content(&config.content_root).await?;
+    let content_files = generate_content(&config.content_root)?;
     log_normal(&format!(
         "content generation completed with {} files",
         content_files.len()
@@ -62,20 +59,20 @@ async fn generate_static_content(config: &Config) -> std::io::Result<()> {
     Ok(())
 }
 
-async fn generate_content(content_root: &Path) -> Result<Vec<String>, std::io::Error> {
+fn generate_content(content_root: &Path) -> Result<Vec<String>, std::io::Error> {
     let mut content_files = Vec::new();
     for path in std::fs::read_dir(content_root)
         .expect("expect iteration over content root to work")
         .flatten()
     {
-        if let Some(file_name) = add_file_to_content(&path.path()).await? {
+        if let Some(file_name) = add_content(&path.path())? {
             content_files.push(file_name);
         }
     }
     Ok(content_files)
 }
 
-async fn add_file_to_content(path: &Path) -> Result<Option<String>, std::io::Error> {
+fn add_content(path: &Path) -> Result<Option<String>, std::io::Error> {
     let path_as_lossy_str = path.to_string_lossy();
     let file_name = path.file_stem().unwrap_or_else(|| {
         panic!(
@@ -96,7 +93,7 @@ async fn add_file_to_content(path: &Path) -> Result<Option<String>, std::io::Err
             file_name.hash(&mut hasher);
             let new_name = format!("{}.{}", hasher.finish(), file_extension);
             let destination = PathBuf::from(format!("{SERVER_CONTENT}/{}", new_name));
-            tokio::fs::copy(path, destination).await?;
+            std::fs::copy(path, destination)?;
             Ok(Some(new_name))
         }
         None => {
@@ -118,13 +115,19 @@ fn create_and_run_server(config: &Config) -> std::io::Result<Server> {
         let cors = Cors::permissive();
         App::new()
             .wrap(cors)
+            .route("/", web::get().to(index))
             .route("/files", web::get().to(get_files))
+            .service(fs::Files::new("/static", "./content/static").show_files_listing())
             .service(fs::Files::new("/content", "./content").show_files_listing())
     })
     .bind(config.address.as_ref())?;
     Ok(server.run())
 }
 
+async fn index(_req: HttpRequest) -> actix_web::Result<NamedFile> {
+    let path: PathBuf = "./content/index.html".parse().unwrap();
+    Ok(NamedFile::open(path)?)
+}
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 struct FileData {
     name: String,
@@ -185,12 +188,13 @@ fn file_data(path: &Path) -> FileData {
 
 #[cfg(test)]
 mod tests {
-    use std::{fs::File, path::PathBuf};
+    use std::{fs::File, io::Write, path::PathBuf};
 
-    use crate::{create_and_run_server, get_files, Config, FileData};
+    use crate::{create_and_run_server, get_files, index, Config, FileData};
     use actix_web::{
         body::to_bytes,
-        http::{self},
+        http::{self, header::ContentType},
+        test,
     };
     use std::sync::Once;
 
@@ -210,6 +214,16 @@ mod tests {
                 .expect("expect sever running to succeed");
         })
         .abort()
+    }
+    #[actix_web::test]
+    async fn can_get_the_index_page() {
+        initialize();
+        let req = test::TestRequest::default()
+            .insert_header(ContentType::plaintext())
+            .to_http_request();
+        index(req)
+            .await
+            .expect("expect getting index.html to succeed");
     }
 
     #[actix_web::test]
@@ -245,6 +259,11 @@ mod tests {
                 std::fs::remove_dir_all(path).expect("expect cleaning up content dir to succeed");
             }
             std::fs::create_dir(path).expect("expect creating content dir to succeed");
+            let mut index_file = File::create(path.join("./index.html"))
+                .expect("expect creating index.html to succeed");
+            index_file
+                .write_all(b"<html></html>")
+                .expect("expect writing to index.html to succeed");
             let content_files = ["1.mp4", "2.mp4", "3.mkv", "6.txt"];
             for each in content_files {
                 File::create(path.join(format!("./{each}")))
