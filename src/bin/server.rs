@@ -9,7 +9,7 @@ use actix_cors::Cors;
 use actix_files as fs;
 use actix_web::{dev::Server, web, App, HttpRequest, HttpResponse, HttpServer};
 use fs::NamedFile;
-use pea_server::log_normal;
+use pea_server::{log_normal, log_debug};
 use serde::{Deserialize, Serialize};
 
 struct Config {
@@ -150,14 +150,15 @@ fn get_all_files() -> Vec<FileData> {
         .flatten()
         .map(|each| each.path())
     {
-        if path.is_file()
-            && path
-                .extension()
-                .expect("expect valid file extension")
-                .to_string_lossy()
-                == "mp4"
-        {
-            files.push(file_data(&path));
+        if path.is_file() {
+            match path.extension() {
+                Some(_) => {
+                    files.push(file_data(&path));
+                }
+                None => {
+                    log_debug(&format!("ignoring file : {} due to lack of extension", path.to_string_lossy()));
+                }
+            }
         }
     }
     files
@@ -232,7 +233,8 @@ mod tests {
         let resp = get_files().await;
         assert_eq!(resp.status(), http::StatusCode::OK);
         let actual = to_bytes(resp.into_body()).await.unwrap();
-        let actual: Vec<FileData> = serde_json::from_slice(&actual).unwrap();
+        let mut actual: Vec<FileData> = serde_json::from_slice(&actual).unwrap();
+        actual.sort_by_key(|data| {data.id});
 
         let expected: Vec<FileData> = vec![
             FileData {
@@ -245,11 +247,20 @@ mod tests {
                 id: 2,
                 ty: "mp4".to_string(),
             },
+            FileData {
+                name: "3.mkv".to_string(),
+                id: 3,
+                ty: "mkv".to_string(),
+            },
+            FileData {
+                name: "6.txt".to_string(),
+                id: 6,
+                ty: "txt".to_string(),
+            },
         ];
         assert_eq!(actual, expected)
     }
 
-    // FIXME: once we have the proper client building pipeline that needs to be triggered before,
     // every test properly creating the content dir
     fn initialize() {
         INIT.call_once(|| {
@@ -259,7 +270,7 @@ mod tests {
                 std::fs::remove_dir_all(path).expect("expect cleaning up content dir to succeed");
             }
             std::fs::create_dir(path).expect("expect creating content dir to succeed");
-            let content_files = ["1.mp4", "2.mp4", "3.mkv", "6.txt"];
+            let content_files = ["1.mp4", "2.mp4", "3.mkv", "6.txt", ".gitignore", "noext"];
             for each in content_files {
                 File::create(path.join(format!("./{each}")))
                     .unwrap_or_else(|_| panic!("expect creating {} to succeed", each));
