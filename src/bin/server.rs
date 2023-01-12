@@ -9,7 +9,7 @@ use actix_cors::Cors;
 use actix_files as fs;
 use actix_web::{dev::Server, web, App, HttpRequest, HttpResponse, HttpServer};
 use fs::NamedFile;
-use pea_server::{copy_files, log_normal};
+use pea_server::log_normal;
 use serde::{Deserialize, Serialize};
 
 struct Config {
@@ -50,35 +50,12 @@ fn generate_static_content(config: &Config) -> std::io::Result<()> {
         "using :{} as the content directory",
         content_path.to_string_lossy()
     ));
-    if content_path.exists() {
-        std::fs::remove_dir_all(&content_path)?;
-    }
-    std::fs::create_dir(&content_path)?;
     log_normal("starting content generation");
     let content_files = generate_content(&config.content_root)?;
     log_normal(&format!(
         "content generation completed with {} files",
         content_files.len()
     ));
-    let index_content = PathBuf::from("./pea-client/build/");
-    copy_index_content(&index_content)?;
-    Ok(())
-}
-
-fn copy_index_content(index_content_path: &Path) -> std::io::Result<()> {
-    if !index_content_path.exists() && !index_content_path.is_dir() {
-        panic!(
-            "failed to find index content directory at {}",
-            index_content_path.to_string_lossy()
-        );
-    }
-    let destination = PathBuf::from(format!("{SERVER_CONTENT}/"));
-    for path in std::fs::read_dir(index_content_path)
-        .expect("expect iteration over content root to work")
-        .flatten()
-    {
-        copy_files(&path.path(), &destination)?;
-    }
     Ok(())
 }
 
