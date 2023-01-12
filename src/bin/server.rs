@@ -117,7 +117,7 @@ fn create_and_run_server(config: &Config) -> std::io::Result<Server> {
             .wrap(cors)
             .route("/", web::get().to(index))
             .route("/files", web::get().to(get_files))
-            .service(fs::Files::new("/static", "./content/static").show_files_listing())
+            .service(fs::Files::new("/static", "./client-content/static").show_files_listing())
             .service(fs::Files::new("/content", "./content").show_files_listing())
     })
     .bind(config.address.as_ref())?;
@@ -125,7 +125,7 @@ fn create_and_run_server(config: &Config) -> std::io::Result<Server> {
 }
 
 async fn index(_req: HttpRequest) -> actix_web::Result<NamedFile> {
-    let path: PathBuf = "./content/index.html".parse().unwrap();
+    let path: PathBuf = "./client-content/index.html".parse().unwrap();
     Ok(NamedFile::open(path)?)
 }
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -259,15 +259,22 @@ mod tests {
                 std::fs::remove_dir_all(path).expect("expect cleaning up content dir to succeed");
             }
             std::fs::create_dir(path).expect("expect creating content dir to succeed");
+            let content_files = ["1.mp4", "2.mp4", "3.mkv", "6.txt"];
+            for each in content_files {
+                File::create(path.join(format!("./{each}")))
+                    .unwrap_or_else(|_| panic!("expect creating {} to succeed", each));
+
+            let content_path = PathBuf::from("./client-content");
+            let path = &content_path;
+            if path.exists() {
+                std::fs::remove_dir_all(path).expect("expect cleaning up content dir to succeed");
+            }
+            std::fs::create_dir(path).expect("expect creating content dir to succeed");
             let mut index_file = File::create(path.join("./index.html"))
                 .expect("expect creating index.html to succeed");
             index_file
                 .write_all(b"<html></html>")
                 .expect("expect writing to index.html to succeed");
-            let content_files = ["1.mp4", "2.mp4", "3.mkv", "6.txt"];
-            for each in content_files {
-                File::create(path.join(format!("./{each}")))
-                    .unwrap_or_else(|_| panic!("expect creating {} to succeed", each));
             }
         })
     }
