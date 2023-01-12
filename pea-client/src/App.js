@@ -61,7 +61,6 @@ class App extends React.Component {
         </div>
       );
     }
-    console.log(files);
     const videoItems = files
       .filter((each) => each.ty === "mp4")
       .map((each) => (
