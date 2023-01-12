@@ -82,10 +82,6 @@ fn add_content(path: &Path) -> Result<Option<String>, std::io::Error> {
     });
     match path.extension() {
         Some(file_extension) => {
-            if file_extension != "mp4" {
-                log_normal(&format!("ignoring file {:?} not supported", file_name));
-                return Ok(None);
-            }
             let file_extension = file_extension
                 .to_str()
                 .expect("file_extension will always be a valid string since we check it above");
