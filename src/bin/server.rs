@@ -9,7 +9,7 @@ use actix_cors::Cors;
 use actix_files as fs;
 use actix_web::{dev::Server, web, App, HttpRequest, HttpResponse, HttpServer};
 use fs::NamedFile;
-use pea_server::log_normal;
+use pea_server::{log_debug, log_normal};
 use serde::{Deserialize, Serialize};
 
 struct Config {
@@ -82,10 +82,6 @@ fn add_content(path: &Path) -> Result<Option<String>, std::io::Error> {
     });
     match path.extension() {
         Some(file_extension) => {
-            if file_extension != "mp4" {
-                log_normal(&format!("ignoring file {:?} not supported", file_name));
-                return Ok(None);
-            }
             let file_extension = file_extension
                 .to_str()
                 .expect("file_extension will always be a valid string since we check it above");
@@ -117,7 +113,7 @@ fn create_and_run_server(config: &Config) -> std::io::Result<Server> {
             .wrap(cors)
             .route("/", web::get().to(index))
             .route("/files", web::get().to(get_files))
-            .service(fs::Files::new("/static", "./content/static").show_files_listing())
+            .service(fs::Files::new("/static", "./client-content/static").show_files_listing())
             .service(fs::Files::new("/content", "./content").show_files_listing())
     })
     .bind(config.address.as_ref())?;
@@ -125,7 +121,7 @@ fn create_and_run_server(config: &Config) -> std::io::Result<Server> {
 }
 
 async fn index(_req: HttpRequest) -> actix_web::Result<NamedFile> {
-    let path: PathBuf = "./content/index.html".parse().unwrap();
+    let path: PathBuf = "./client-content/index.html".parse().unwrap();
     Ok(NamedFile::open(path)?)
 }
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -150,14 +146,18 @@ fn get_all_files() -> Vec<FileData> {
         .flatten()
         .map(|each| each.path())
     {
-        if path.is_file()
-            && path
-                .extension()
-                .expect("expect valid file extension")
-                .to_string_lossy()
-                == "mp4"
-        {
-            files.push(file_data(&path));
+        if path.is_file() {
+            match path.extension() {
+                Some(_) => {
+                    files.push(file_data(&path));
+                }
+                None => {
+                    log_debug(&format!(
+                        "ignoring file : {} due to lack of extension",
+                        path.to_string_lossy()
+                    ));
+                }
+            }
         }
     }
     files
@@ -232,7 +232,8 @@ mod tests {
         let resp = get_files().await;
         assert_eq!(resp.status(), http::StatusCode::OK);
         let actual = to_bytes(resp.into_body()).await.unwrap();
-        let actual: Vec<FileData> = serde_json::from_slice(&actual).unwrap();
+        let mut actual: Vec<FileData> = serde_json::from_slice(&actual).unwrap();
+        actual.sort_by_key(|data| data.id);
 
         let expected: Vec<FileData> = vec![
             FileData {
@@ -245,11 +246,20 @@ mod tests {
                 id: 2,
                 ty: "mp4".to_string(),
             },
+            FileData {
+                name: "3.mkv".to_string(),
+                id: 3,
+                ty: "mkv".to_string(),
+            },
+            FileData {
+                name: "6.txt".to_string(),
+                id: 6,
+                ty: "txt".to_string(),
+            },
         ];
         assert_eq!(actual, expected)
     }
 
-    // FIXME: once we have the proper client building pipeline that needs to be triggered before,
     // every test properly creating the content dir
     fn initialize() {
         INIT.call_once(|| {
@@ -259,15 +269,23 @@ mod tests {
                 std::fs::remove_dir_all(path).expect("expect cleaning up content dir to succeed");
             }
             std::fs::create_dir(path).expect("expect creating content dir to succeed");
-            let mut index_file = File::create(path.join("./index.html"))
-                .expect("expect creating index.html to succeed");
-            index_file
-                .write_all(b"<html></html>")
-                .expect("expect writing to index.html to succeed");
-            let content_files = ["1.mp4", "2.mp4", "3.mkv", "6.txt"];
+            let content_files = ["1.mp4", "2.mp4", "3.mkv", "6.txt", ".gitignore", "noext"];
             for each in content_files {
                 File::create(path.join(format!("./{each}")))
                     .unwrap_or_else(|_| panic!("expect creating {} to succeed", each));
+
+                let content_path = PathBuf::from("./client-content");
+                let path = &content_path;
+                if path.exists() {
+                    std::fs::remove_dir_all(path)
+                        .expect("expect cleaning up content dir to succeed");
+                }
+                std::fs::create_dir(path).expect("expect creating content dir to succeed");
+                let mut index_file = File::create(path.join("./index.html"))
+                    .expect("expect creating index.html to succeed");
+                index_file
+                    .write_all(b"<html></html>")
+                    .expect("expect writing to index.html to succeed");
             }
         })
     }

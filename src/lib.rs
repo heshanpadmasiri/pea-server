@@ -4,6 +4,10 @@ pub fn log_normal(message: &str) {
     println!("{}", message);
 }
 
+pub fn log_debug(message: &str) {
+    println!("DEBUG: {}", message);
+}
+
 pub fn copy_files(src: &Path, dest: &Path) -> std::io::Result<()> {
     println!("src: {:?} dest: {:?}", src, dest);
     if !src.exists() || !dest.exists() {

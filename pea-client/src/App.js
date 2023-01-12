@@ -11,6 +11,15 @@ function video_tag(filename) {
     </video>
   );
 }
+
+function file_tag(filename) {
+  const src = `${config.SERVER_URL}/content/${filename}`;
+  return (
+    <li>
+      <a href={src}>{filename}</a>{" "}
+    </li>
+  );
+}
 class App extends React.Component {
   constructor(props) {
     super(props);
@@ -52,15 +61,28 @@ class App extends React.Component {
         </div>
       );
     }
-    const fileItems = files.map((each) => (
-      <div className="grid-item" key={each.id}>
-        {video_tag(each.name)}
-      </div>
-    ));
+    const videoItems = files
+      .filter((each) => each.ty === "mp4")
+      .map((each) => (
+        <div className="grid-item" key={each.id}>
+          {video_tag(each.name)}
+        </div>
+      ));
+    const fileItems = files
+      .filter((each) => each.ty !== "mp4")
+      .map((each) => (
+        <ul className="grid-item" key={each.id}>
+          {file_tag(each.name)}
+        </ul>
+      ));
+
     return (
       <div className="App">
         <h1> Pea server </h1>
-        <div className="gird-container">{fileItems}</div>
+        <h2> Videos</h2>
+        <div className="gird-container">{videoItems}</div>
+        <h2> Other files</h2>
+        {fileItems}
       </div>
     );
   }
