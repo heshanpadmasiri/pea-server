@@ -1,6 +1,7 @@
 use std::{
+    io::Write,
     path::{Path, PathBuf},
-    process::Command, io::Write,
+    process::Command,
 };
 
 fn main() {

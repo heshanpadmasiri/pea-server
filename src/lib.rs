@@ -9,24 +9,21 @@ pub fn log_debug(message: &str) {
 }
 
 pub fn get_local_ip_address() -> std::net::IpAddr {
-     match local_ip_address::local_ip() {
-            Ok(address) => {
-                address
-            }
-            Err(_) => {
-                // workaround for https://github.com/EstebanBorai/local-ip-address/issues/82
-                let network_interfaces = local_ip_address::list_afinet_netifas().unwrap();
+    match local_ip_address::local_ip() {
+        Ok(address) => address,
+        Err(_) => {
+            // workaround for https://github.com/EstebanBorai/local-ip-address/issues/82
+            let network_interfaces = local_ip_address::list_afinet_netifas().unwrap();
 
-                for (name, ip) in network_interfaces.into_iter() {
-                    if ip.is_ipv4() && name.starts_with("en"){
-                        return ip;
-                    }
+            for (name, ip) in network_interfaces.into_iter() {
+                if ip.is_ipv4() && name.starts_with("en") {
+                    return ip;
                 }
-                panic!("mac os workaround failed");
             }
-     }
+            panic!("mac os workaround failed");
+        }
+    }
 }
-
 
 pub fn copy_files(src: &Path, dest: &Path) -> std::io::Result<()> {
     println!("src: {:?} dest: {:?}", src, dest);
@@ -66,7 +63,6 @@ pub fn copy_files(src: &Path, dest: &Path) -> std::io::Result<()> {
 mod tests {
     use crate::get_local_ip_address;
 
-    
     #[test]
     fn test_get_local_ip() {
         let ip = get_local_ip_address();
