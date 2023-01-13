@@ -9,7 +9,7 @@ use actix_cors::Cors;
 use actix_files as fs;
 use actix_web::{dev::Server, web, App, HttpRequest, HttpResponse, HttpServer};
 use fs::NamedFile;
-use pea_server::{log_debug, log_normal};
+use pea_server::{get_local_ip_address, log_debug, log_normal};
 use serde::{Deserialize, Serialize};
 
 struct Config {
@@ -24,7 +24,7 @@ async fn main() -> std::io::Result<()> {
     let address = Box::new(
         std::env::args()
             .nth(1)
-            .unwrap_or_else(|| "192.168.8.176:8080".to_string()),
+            .unwrap_or_else(|| SocketAddr::from((get_local_ip_address(), 8080)).to_string()),
     );
     let content_root = PathBuf::from(
         std::env::args()
