@@ -2,6 +2,7 @@ use std::{
     hash::{Hash, Hasher},
     net::{self, SocketAddr},
     path::{Path, PathBuf},
+    time::Duration,
     vec::IntoIter,
 };
 
@@ -9,7 +10,7 @@ use actix_cors::Cors;
 use actix_files as fs;
 use actix_web::{dev::Server, web, App, HttpRequest, HttpResponse, HttpServer};
 use fs::NamedFile;
-use pea_server::{get_local_ip_address, log_debug, log_normal};
+use pea_server::{get_local_ip_address, log_debug, log_normal, terminal_message};
 use serde::{Deserialize, Serialize};
 
 struct Config {
@@ -40,8 +41,33 @@ async fn main() -> std::io::Result<()> {
         address,
         content_root,
     };
-    generate_static_content(&config)?;
-    create_and_run_server(&config)?.await
+    tokio::spawn(async move {
+        generate_static_content(&config).expect("generating static content should not fail");
+        create_and_run_server(&config)
+            .expect("server creation should not fail")
+            .await
+            .expect("server running should not fail");
+    });
+    input_listener().expect("expect input listener not to fail");
+    Ok(())
+}
+
+fn input_listener() -> crossterm::Result<()> {
+    terminal_message("Enter q to shutdown server");
+    loop {
+        if crossterm::event::poll(Duration::from_millis(1000))? {
+            if let crossterm::event::Event::Key(event) = crossterm::event::read()? {
+                if event.code == crossterm::event::KeyCode::Char('q') {
+                    shutdown_server();
+                }
+            }
+        }
+    }
+}
+
+fn shutdown_server() {
+    log_debug("intializing shutdown");
+    std::process::exit(0);
 }
 
 fn generate_static_content(config: &Config) -> std::io::Result<()> {
