@@ -11,6 +11,7 @@ tokio = {version = "1", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 local-ip-address = "0.5.1"
+crossterm = "0.25.0"
 
 [build-dependencies]
 local-ip-address = "0.5.1"

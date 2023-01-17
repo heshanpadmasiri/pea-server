@@ -8,6 +8,10 @@ pub fn log_debug(message: &str) {
     println!("DEBUG: {}", message);
 }
 
+pub fn terminal_message(message: &str) {
+    print!("{}", message);
+}
+
 pub fn get_local_ip_address() -> std::net::IpAddr {
     match local_ip_address::local_ip() {
         Ok(address) => address,
