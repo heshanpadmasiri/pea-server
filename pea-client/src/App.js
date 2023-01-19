@@ -1,8 +1,11 @@
 import axios from "axios";
 import React from "react";
-import { Container } from "react-bootstrap";
 import "./App.css";
 import config from "./config.json";
+
+import Container from 'react-bootstrap/Container';
+import VideoPage from "./VideoPage";
+import OtherFilePage from "./OtherFilePage";
 class App extends React.Component {
   constructor(props) {
     super(props);
@@ -44,48 +47,16 @@ class App extends React.Component {
         </div>
       );
     }
-    const videoItems = files
-      .filter((each) => each.ty === "mp4")
-      .map((each) => (
-        <div className="grid-item" key={each.id}>
-          {video_tag(each.name)}
-        </div>
-      ));
-    const fileItems = files
-      .filter((each) => each.ty !== "mp4")
-      .map((each) => (
-        <ul className="grid-item" key={each.id}>
-          {file_tag(each.name)}
-        </ul>
-      ));
-
+    const videos = files.filter((each) => each.ty === "mp4");
+    const other_files = files.filter((each) => each.ty !== "mp4");
     return (
       <Container className="p-3">
         <h1 className="header"> Pea server </h1>
-        <h2> Videos</h2>
-        <div className="gird-container">{videoItems}</div>
-        <h2> Other files</h2>
-        {fileItems}
+        <VideoPage videos={videos}></VideoPage>
+        <OtherFilePage files={other_files}></OtherFilePage>
       </Container>
     );
   }
 }
 
-function video_tag(filename) {
-  const src = `${config.SERVER_URL}/content/${filename}`;
-  return (
-      <video controls>
-        <source src={src} type="video/mp4"></source>
-      </video>
-  );
-}
-
-function file_tag(filename) {
-  const src = `${config.SERVER_URL}/content/${filename}`;
-  return (
-      <li>
-        <a href={src}>{filename}</a>{" "}
-      </li>
-  );
-}
 export default App;
