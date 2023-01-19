@@ -1,25 +1,8 @@
 import axios from "axios";
 import React from "react";
+import { Container } from "react-bootstrap";
 import "./App.css";
 import config from "./config.json";
-
-function video_tag(filename) {
-  const src = `${config.SERVER_URL}/content/${filename}`;
-  return (
-    <video controls>
-      <source src={src} type="video/mp4"></source>
-    </video>
-  );
-}
-
-function file_tag(filename) {
-  const src = `${config.SERVER_URL}/content/${filename}`;
-  return (
-    <li>
-      <a href={src}>{filename}</a>{" "}
-    </li>
-  );
-}
 class App extends React.Component {
   constructor(props) {
     super(props);
@@ -77,14 +60,32 @@ class App extends React.Component {
       ));
 
     return (
-      <div className="App">
-        <h1> Pea server </h1>
+      <Container className="p-3">
+        <h1 className="header"> Pea server </h1>
         <h2> Videos</h2>
         <div className="gird-container">{videoItems}</div>
         <h2> Other files</h2>
         {fileItems}
-      </div>
+      </Container>
     );
   }
+}
+
+function video_tag(filename) {
+  const src = `${config.SERVER_URL}/content/${filename}`;
+  return (
+      <video controls>
+        <source src={src} type="video/mp4"></source>
+      </video>
+  );
+}
+
+function file_tag(filename) {
+  const src = `${config.SERVER_URL}/content/${filename}`;
+  return (
+      <li>
+        <a href={src}>{filename}</a>{" "}
+      </li>
+  );
 }
 export default App;
