@@ -3,23 +3,14 @@ import React from "react";
 import "./App.css";
 import config from "./config.json";
 
-function video_tag(filename) {
-  const src = `${config.SERVER_URL}/content/${filename}`;
-  return (
-    <video controls>
-      <source src={src} type="video/mp4"></source>
-    </video>
-  );
-}
+import Container from "react-bootstrap/Container";
+import Nav from "react-bootstrap/Nav";
+import Navbar from "react-bootstrap/Navbar";
 
-function file_tag(filename) {
-  const src = `${config.SERVER_URL}/content/${filename}`;
-  return (
-    <li>
-      <a href={src}>{filename}</a>{" "}
-    </li>
-  );
-}
+import VideoPage from "./VideoPage";
+import OtherFilePage from "./OtherFilePage";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+
 class App extends React.Component {
   constructor(props) {
     super(props);
@@ -61,30 +52,29 @@ class App extends React.Component {
         </div>
       );
     }
-    const videoItems = files
-      .filter((each) => each.ty === "mp4")
-      .map((each) => (
-        <div className="grid-item" key={each.id}>
-          {video_tag(each.name)}
-        </div>
-      ));
-    const fileItems = files
-      .filter((each) => each.ty !== "mp4")
-      .map((each) => (
-        <ul className="grid-item" key={each.id}>
-          {file_tag(each.name)}
-        </ul>
-      ));
-
+    const videos = files.filter((each) => each.ty === "mp4");
+    const other_files = files.filter((each) => each.ty !== "mp4");
+    const router = createBrowserRouter([
+      { path: "/", element: <VideoPage videos={videos} /> },
+      { path: "/videos", element: <VideoPage videos={videos} /> },
+      { path: "/other", element: <OtherFilePage files={other_files} /> },
+    ]);
     return (
-      <div className="App">
-        <h1> Pea server </h1>
-        <h2> Videos</h2>
-        <div className="gird-container">{videoItems}</div>
-        <h2> Other files</h2>
-        {fileItems}
-      </div>
+      <Container className="p-3">
+        <Navbar bg="dark" variant="dark">
+          <Container>
+            <Navbar.Brand href="/">PeaServer</Navbar.Brand>
+            <Nav className="me-auto">
+              <Nav.Link href="/">Home</Nav.Link>
+              <Nav.Link href="/videos">Videos</Nav.Link>
+              <Nav.Link href="/other">Other Files</Nav.Link>
+            </Nav>
+          </Container>
+        </Navbar>
+        <RouterProvider router={router} />
+      </Container>
     );
   }
 }
+
 export default App;
