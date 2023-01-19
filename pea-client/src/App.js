@@ -3,9 +3,11 @@ import React from "react";
 import "./App.css";
 import config from "./config.json";
 
-import Container from 'react-bootstrap/Container';
+import Container from "react-bootstrap/Container";
 import VideoPage from "./VideoPage";
 import OtherFilePage from "./OtherFilePage";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+
 class App extends React.Component {
   constructor(props) {
     super(props);
@@ -49,11 +51,15 @@ class App extends React.Component {
     }
     const videos = files.filter((each) => each.ty === "mp4");
     const other_files = files.filter((each) => each.ty !== "mp4");
+    const router = createBrowserRouter([
+      { path: "/", element: <VideoPage videos={videos} /> },
+      { path: "/videos", element: <VideoPage videos={videos} /> },
+      { path: "/other", element: <OtherFilePage files={other_files} />}
+    ]);
     return (
       <Container className="p-3">
         <h1 className="header"> Pea server </h1>
-        <VideoPage videos={videos}></VideoPage>
-        <OtherFilePage files={other_files}></OtherFilePage>
+        <RouterProvider router={router} />
       </Container>
     );
   }
