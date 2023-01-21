@@ -1,6 +1,7 @@
 import Container from "react-bootstrap/Container";
 import React from "react";
 import config from "./config.json";
+import navbar from "./navbar";
 
 class VideoPage extends React.Component {
   constructor(props) {
@@ -13,7 +14,8 @@ class VideoPage extends React.Component {
   render() {
     const { videos } = this.state;
     const videoTags = videos.map((each) => video_tag(each.name, each.id));
-    return <Container className="p-3">{videoTags}</Container>;
+    const nav = navbar();
+    return (<Container className="p-3">{nav}{videoTags}</Container>);
   }
 }
 

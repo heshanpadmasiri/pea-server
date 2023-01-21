@@ -4,9 +4,6 @@ import "./App.css";
 import config from "./config.json";
 
 import Container from "react-bootstrap/Container";
-import Nav from "react-bootstrap/Nav";
-import Navbar from "react-bootstrap/Navbar";
-
 import VideoPage from "./VideoPage";
 import OtherFilePage from "./OtherFilePage";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
@@ -61,17 +58,7 @@ class App extends React.Component {
     ]);
     return (
       <Container className="p-3">
-        <Navbar bg="dark" variant="dark">
-          <Container>
-            <Navbar.Brand href="/">PeaServer</Navbar.Brand>
-            <Nav className="me-auto">
-              <Nav.Link href="/">Home</Nav.Link>
-              <Nav.Link href="/videos">Videos</Nav.Link>
-              <Nav.Link href="/other">Other Files</Nav.Link>
-            </Nav>
-          </Container>
-        </Navbar>
-        <RouterProvider router={router} />
+        <RouterProvider router={router}/>
       </Container>
     );
   }

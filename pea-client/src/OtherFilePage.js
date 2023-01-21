@@ -1,5 +1,7 @@
 import React from "react";
+import Container from "react-bootstrap/Container";
 import config from "./config.json";
+import navbar from "./navbar";
 
 class OtherFilePage extends React.Component {
   constructor(props) {
@@ -14,7 +16,8 @@ class OtherFilePage extends React.Component {
     const file_tags = files.map((each) => {
       return file_tag(each.name, each.id);
     });
-    return <ul>{file_tags}</ul>;
+    const nav = navbar();
+    return (<Container className="p-3">{nav}<ul>{file_tags}</ul></Container>);
   }
 }
 
