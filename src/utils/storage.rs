@@ -1,8 +1,14 @@
-use std::path::{Path, PathBuf};
+use std::{
+    collections::{HashMap, hash_map::DefaultHasher},
+    io::Write,
+    path::{Path, PathBuf}, hash::{Hash, Hasher},
+};
 
 use crate::utils::log::log_normal;
 
-#[derive(Debug, PartialEq)]
+use super::log::log_debug;
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Clone)]
 pub struct FileMetadata {
     pub name: String,
     pub id: u64,
@@ -16,6 +22,7 @@ pub enum FileErr {
     IndexDoesNotExist,
     IndexInvalid,
     IdInvalid,
+    DBError,
 }
 
 impl std::fmt::Display for FileErr {
@@ -25,31 +32,103 @@ impl std::fmt::Display for FileErr {
             FileErr::IndexDoesNotExist => write!(f, "index file does not exits"),
             FileErr::IndexInvalid => write!(f, "index invalid"),
             FileErr::IdInvalid => write!(f, "id invalid"),
+            FileErr::DBError => write!(f, "db error"),
         }
     }
 }
 
+type FileDB = HashMap<u64, FileMetadata>;
+
 pub struct FileIndex {
     index_file: PathBuf,
+    db: FileDB,
 }
 
 impl FileIndex {
     pub fn new(index_file: &Path) -> Self {
+        let db = match deserialize_db(index_file) {
+            Ok(current) => {current},
+            Err(_) => {
+                log_debug("empty index");
+                HashMap::new()}
+        };
         Self {
+            db,
             index_file: index_file.to_path_buf(),
         }
     }
 
-    pub fn files(&self) -> Result<Vec<FileMetadata>, FileErr> {
-        files(&self.index_file)
+    pub fn files(&self) -> Vec<FileMetadata> {
+        self.db.values().cloned().collect()
     }
 
     pub fn get_file_path(&self, id: u64) -> Result<PathBuf, FileErr> {
-        get_file_path(&self.index_file, id)
+        match self.db.get(&id) {
+            Some(metadata) => {
+                return Ok(metadata.path.clone());
+            }
+            None => {
+                return Err(FileErr::IdInvalid);
+            }
+        }
+    }
+
+    pub fn add_dir(&mut self, path: &Path) -> Result<(), FileErr>{
+        let new_files = files_in_dir(path)?;
+        for each in new_files {
+            if self.db.contains_key(&each.id) {
+                panic!("duplicate id for {:?}", each);
+            }
+            self.db.insert(each.id, each);
+        }
+        serialize_db(&self.index_file, &self.db)
     }
 }
 
-fn files(path: &Path) -> Result<Vec<FileMetadata>, FileErr> {
+fn deserialize_db(path: &Path) -> Result<FileDB, FileErr> {
+    Ok(read_index_file(path)?
+        .into_iter()
+        .map(|each| (each.id, each))
+        .collect())
+}
+
+fn read_index_file(path: &Path) -> Result<Vec<FileMetadata>, FileErr> {
+    match std::fs::read_to_string(path) {
+        Ok(content) => match serde_json::from_str::<Vec<FileMetadata>>(&content) {
+            Ok(res) => {
+                return Ok(res);
+            }
+            Err(_) => {
+                return Err(FileErr::IndexDoesNotExist);
+            }
+        },
+        Err(_) => Err(FileErr::IndexDoesNotExist),
+    }
+}
+
+fn serialize_db(path: &Path, db: &FileDB) -> Result<(), FileErr> {
+    let values: Vec<FileMetadata> = db.values().cloned().collect();
+    match serde_json::to_string_pretty(&values) {
+        Ok(body) => {
+            let f = std::fs::OpenOptions::new().write(true).create(true).open(path);
+            match f {
+                Ok(mut file) => {
+                    file.write_all(body.as_bytes())
+                        .expect("writing to index file must succeed");
+                    return Ok(());
+                }
+                Err(_) => {
+                    return Err(FileErr::DBError);
+                }
+            }
+        }
+        Err(_) => {
+            return Err(FileErr::DBError);
+        }
+    }
+}
+
+fn files_in_dir(path: &Path) -> Result<Vec<FileMetadata>, FileErr> {
     if !path.is_dir() {
         return Err(FileErr::PathDoesNotExist);
     }
@@ -60,7 +139,7 @@ fn files(path: &Path) -> Result<Vec<FileMetadata>, FileErr> {
         .map(|each| each.path())
     {
         if child_path.is_dir() {
-            metadata.extend(files(&child_path)?);
+            metadata.extend(files_in_dir(&child_path)?);
         } else if child_path.extension().is_some() {
             metadata.push(file_metadata(&child_path));
         }
@@ -75,13 +154,14 @@ fn file_metadata(path: &Path) -> FileMetadata {
         .to_str()
         .expect("expect valid file name")
         .to_string();
-    let id = path
+    let mut hasher = DefaultHasher::new();
+    let file_stem = path
         .file_stem()
         .expect("expect file stem")
         .to_str()
-        .expect("expect valid file name")
-        .parse::<u64>()
-        .unwrap();
+        .expect("expect valid file name");
+    file_stem.hash(&mut hasher);
+    let id = hasher.finish();
     let ty = path
         .extension()
         .expect("expect valid file extension")
@@ -137,7 +217,7 @@ pub fn clean_up_dir(path: &Path) -> std::io::Result<()> {
     std::fs::create_dir(path)
 }
 
-// move to file index
+// FIXME: remove this
 fn get_file_path(index: &Path, id: u64) -> Result<PathBuf, FileErr> {
     if !index.exists() {
         return Err(FileErr::IndexDoesNotExist);

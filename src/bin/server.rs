@@ -17,7 +17,7 @@ struct Config {
     content_root: PathBuf,
 }
 
-const SERVER_CONTENT: &str = "./content";
+const SERVER_CONTENT: &str = "./content/index.json";
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -41,7 +41,7 @@ async fn main() -> std::io::Result<()> {
         content_root,
     };
     tokio::spawn(async move {
-        generate_static_content(&config).expect("generating static content should not fail");
+        // generate_static_content(&config).expect("generating static content should not fail");
         create_and_run_server(&config)
             .expect("server creation should not fail")
             .await
@@ -197,7 +197,6 @@ fn get_all_files() -> Vec<FileData> {
     let index = FileIndex::new(&PathBuf::from(SERVER_CONTENT));
     index
         .files()
-        .expect("expect SERVER_CONTENT directory to be valid")
         .into_iter()
         .map(|each| each.into())
         .collect()
