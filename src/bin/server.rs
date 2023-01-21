@@ -6,16 +6,11 @@ use std::{
     vec::IntoIter,
 };
 
-// use actix_cors::Cors;
-// use actix_files as fs;
-// use actix_web::{dev::Server, web, App, HttpRequest, HttpResponse, HttpServer};
-// use fs::NamedFile;
 use pea_server::utils::{
     get_local_ip_address,
     log::{log_debug, log_normal, terminal_message},
     storage::{files, FileMetadata},
 };
-// use serde::{Deserialize, Serialize};
 
 struct Config {
     address: Box<dyn net::ToSocketAddrs<Iter = IntoIter<SocketAddr>> + Send + Sync>,
