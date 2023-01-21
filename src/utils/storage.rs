@@ -1,7 +1,8 @@
 use std::{
-    collections::{HashMap, hash_map::DefaultHasher},
+    collections::{hash_map::DefaultHasher, HashMap},
+    hash::{Hash, Hasher},
     io::Write,
-    path::{Path, PathBuf}, hash::{Hash, Hasher},
+    path::{Path, PathBuf},
 };
 
 use crate::utils::log::log_normal;
@@ -47,10 +48,11 @@ pub struct FileIndex {
 impl FileIndex {
     pub fn new(index_file: &Path) -> Self {
         let db = match deserialize_db(index_file) {
-            Ok(current) => {current},
+            Ok(current) => current,
             Err(_) => {
                 log_debug("empty index");
-                HashMap::new()}
+                HashMap::new()
+            }
         };
         Self {
             db,
@@ -73,7 +75,7 @@ impl FileIndex {
         }
     }
 
-    pub fn add_dir(&mut self, path: &Path) -> Result<(), FileErr>{
+    pub fn add_dir(&mut self, path: &Path) -> Result<(), FileErr> {
         let new_files = files_in_dir(path)?;
         for each in new_files {
             if self.db.contains_key(&each.id) {
@@ -110,7 +112,10 @@ fn serialize_db(path: &Path, db: &FileDB) -> Result<(), FileErr> {
     let values: Vec<FileMetadata> = db.values().cloned().collect();
     match serde_json::to_string_pretty(&values) {
         Ok(body) => {
-            let f = std::fs::OpenOptions::new().write(true).create(true).open(path);
+            let f = std::fs::OpenOptions::new()
+                .write(true)
+                .create(true)
+                .open(path);
             match f {
                 Ok(mut file) => {
                     file.write_all(body.as_bytes())
@@ -215,28 +220,4 @@ pub fn clean_up_dir(path: &Path) -> std::io::Result<()> {
         std::fs::remove_dir_all(path)?;
     }
     std::fs::create_dir(path)
-}
-
-// FIXME: remove this
-fn get_file_path(index: &Path, id: u64) -> Result<PathBuf, FileErr> {
-    if !index.exists() {
-        return Err(FileErr::IndexDoesNotExist);
-    }
-    // TODO: change index to be an index file
-    else if !index.is_dir() {
-        return Err(FileErr::IndexInvalid);
-    }
-    let id = id.to_string();
-    for path in std::fs::read_dir(index)
-        .expect("expect iteration over index to succeed")
-        .flatten()
-        .map(|each| each.path())
-    {
-        if let Some(id_str) = path.file_stem() {
-            if id_str.to_string_lossy() == id {
-                return Ok(path);
-            }
-        }
-    }
-    Err(FileErr::IdInvalid)
 }
