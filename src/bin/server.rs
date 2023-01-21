@@ -10,7 +10,9 @@ use actix_cors::Cors;
 use actix_files as fs;
 use actix_web::{dev::Server, web, App, HttpRequest, HttpResponse, HttpServer};
 use fs::NamedFile;
-use pea_server::{get_local_ip_address, log_debug, log_normal, terminal_message};
+use pea_server::{
+    files, get_local_ip_address, log_debug, log_normal, terminal_message, FileMetadata,
+};
 use serde::{Deserialize, Serialize};
 
 struct Config {
@@ -157,6 +159,16 @@ struct FileData {
     ty: String,
 }
 
+impl From<FileMetadata> for FileData {
+    fn from(value: FileMetadata) -> Self {
+        return Self {
+            name: value.name,
+            id: value.id,
+            ty: value.ty,
+        };
+    }
+}
+
 async fn get_files() -> HttpResponse {
     let files = get_all_files();
     let body = serde_json::to_string(&files).unwrap();
@@ -166,50 +178,11 @@ async fn get_files() -> HttpResponse {
 }
 
 fn get_all_files() -> Vec<FileData> {
-    let mut files = vec![];
-    for path in std::fs::read_dir(PathBuf::from(SERVER_CONTENT))
-        .expect("expect iteration over server content to work")
-        .flatten()
-        .map(|each| each.path())
-    {
-        if path.is_file() {
-            match path.extension() {
-                Some(_) => {
-                    files.push(file_data(&path));
-                }
-                None => {
-                    log_debug(&format!(
-                        "ignoring file : {} due to lack of extension",
-                        path.to_string_lossy()
-                    ));
-                }
-            }
-        }
-    }
-    files
-}
-
-fn file_data(path: &Path) -> FileData {
-    let name = path
-        .file_name()
-        .expect("expect filename")
-        .to_str()
-        .expect("expect valid file name")
-        .to_string();
-    let id = path
-        .file_stem()
-        .expect("expect file stem")
-        .to_str()
-        .expect("expect valid file name")
-        .parse::<u64>()
-        .unwrap();
-    let ty = path
-        .extension()
-        .expect("expect valid file extension")
-        .to_str()
-        .expect("expect properly formatted extension")
-        .to_string();
-    FileData { name, id, ty }
+    files(&PathBuf::from(SERVER_CONTENT))
+        .expect("expect SERVER_CONTENT directory to be valid")
+        .into_iter()
+        .map(|each| each.into())
+        .collect()
 }
 
 #[cfg(test)]
@@ -222,6 +195,7 @@ mod tests {
         http::{self, header::ContentType},
         test,
     };
+    use pea_server::clean_up_dir;
     use std::sync::Once;
 
     static INIT: Once = Once::new();
@@ -291,28 +265,21 @@ mod tests {
         INIT.call_once(|| {
             let content_path = PathBuf::from("./content");
             let path = &content_path;
-            if path.exists() {
-                std::fs::remove_dir_all(path).expect("expect cleaning up content dir to succeed");
-            }
-            std::fs::create_dir(path).expect("expect creating content dir to succeed");
+            clean_up_dir(&path).expect("expect creating content dir to succeed");
             let content_files = ["1.mp4", "2.mp4", "3.mkv", "6.txt", ".gitignore", "noext"];
             for each in content_files {
                 File::create(path.join(format!("./{each}")))
                     .unwrap_or_else(|_| panic!("expect creating {} to succeed", each));
 
-                let content_path = PathBuf::from("./client-content");
-                let path = &content_path;
-                if path.exists() {
-                    std::fs::remove_dir_all(path)
-                        .expect("expect cleaning up content dir to succeed");
-                }
-                std::fs::create_dir(path).expect("expect creating content dir to succeed");
-                let mut index_file = File::create(path.join("./index.html"))
-                    .expect("expect creating index.html to succeed");
-                index_file
-                    .write_all(b"<html></html>")
-                    .expect("expect writing to index.html to succeed");
             }
+            let content_path = PathBuf::from("./client-content");
+            let path = &content_path;
+            clean_up_dir(&path).expect("expect creating content dir to succeed");
+            let mut index_file = File::create(path.join("./index.html"))
+                .expect("expect creating index.html to succeed");
+            index_file
+                .write_all(b"<html></html>")
+                .expect("expect writing to index.html to succeed");
         })
     }
 }
