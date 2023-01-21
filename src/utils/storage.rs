@@ -29,7 +29,27 @@ impl std::fmt::Display for FileErr {
     }
 }
 
-pub fn files(path: &Path) -> Result<Vec<FileMetadata>, FileErr> {
+pub struct FileIndex {
+    index_file: PathBuf,
+}
+
+impl FileIndex {
+    pub fn new(index_file: &Path) -> Self {
+        Self {
+            index_file: index_file.to_path_buf(),
+        }
+    }
+
+    pub fn files(&self) -> Result<Vec<FileMetadata>, FileErr> {
+        files(&self.index_file)
+    }
+
+    pub fn get_file_path(&self, id: u64) -> Result<PathBuf, FileErr> {
+        get_file_path(&self.index_file, id)
+    }
+}
+
+fn files(path: &Path) -> Result<Vec<FileMetadata>, FileErr> {
     if !path.is_dir() {
         return Err(FileErr::PathDoesNotExist);
     }
@@ -117,7 +137,8 @@ pub fn clean_up_dir(path: &Path) -> std::io::Result<()> {
     std::fs::create_dir(path)
 }
 
-pub fn get_file_path(index: &Path, id: u64) -> Result<PathBuf, FileErr> {
+// move to file index
+fn get_file_path(index: &Path, id: u64) -> Result<PathBuf, FileErr> {
     if !index.exists() {
         return Err(FileErr::IndexDoesNotExist);
     }

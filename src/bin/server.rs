@@ -9,7 +9,7 @@ use std::{
 use pea_server::utils::{
     get_local_ip_address,
     log::{log_debug, log_normal, terminal_message},
-    storage::{files, get_file_path, FileMetadata},
+    storage::{FileIndex, FileMetadata},
 };
 
 struct Config {
@@ -171,7 +171,8 @@ async fn get_content(req: actix_web::HttpRequest) -> actix_web::Result<actix_fil
         .map(|id| id.parse::<u64>().unwrap())
         .collect();
     let file_id = file_id[0];
-    let file_path = get_file_path(&PathBuf::from(SERVER_CONTENT), file_id).unwrap();
+    let index = FileIndex::new(&PathBuf::from(SERVER_CONTENT));
+    let file_path = index.get_file_path(file_id).unwrap();
     Ok(actix_files::NamedFile::open(file_path)?)
 }
 
@@ -193,7 +194,9 @@ impl From<FileMetadata> for FileData {
 }
 
 fn get_all_files() -> Vec<FileData> {
-    files(&PathBuf::from(SERVER_CONTENT))
+    let index = FileIndex::new(&PathBuf::from(SERVER_CONTENT));
+    index
+        .files()
         .expect("expect SERVER_CONTENT directory to be valid")
         .into_iter()
         .map(|each| each.into())
