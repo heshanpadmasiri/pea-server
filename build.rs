@@ -8,10 +8,12 @@ fn main() {
     let client_content_dir = PathBuf::from("./client-content");
     let content_dir = PathBuf::from("./content");
     let client_src_root = PathBuf::from("./pea-client");
-    create_server_config(&client_src_root.join("src/config.json"));
-    clean_and_create_dir(&client_content_dir);
-    clean_and_create_dir(&content_dir);
-    create_and_copy_static_page(&client_src_root, &client_content_dir)
+    if Ok("release".to_owned()) == std::env::var("PROFILE") {
+        create_server_config(&client_src_root.join("src/config.json"));
+        clean_and_create_dir(&client_content_dir);
+        clean_and_create_dir(&content_dir);
+        create_and_copy_static_page(&client_src_root, &client_content_dir)
+    }
 }
 
 fn clean_and_create_dir(dir_name: &Path) {
