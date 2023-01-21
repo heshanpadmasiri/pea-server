@@ -270,7 +270,6 @@ mod tests {
             for each in content_files {
                 File::create(path.join(format!("./{each}")))
                     .unwrap_or_else(|_| panic!("expect creating {} to succeed", each));
-
             }
             let content_path = PathBuf::from("./client-content");
             let path = &content_path;
