@@ -6,14 +6,11 @@ use std::{
     vec::IntoIter,
 };
 
-use actix_cors::Cors;
-use actix_files as fs;
-use actix_web::{dev::Server, web, App, HttpRequest, HttpResponse, HttpServer};
-use fs::NamedFile;
-use pea_server::{
-    files, get_local_ip_address, log_debug, log_normal, terminal_message, FileMetadata,
+use pea_server::utils::{
+    get_local_ip_address,
+    log::{log_debug, log_normal, terminal_message},
+    storage::{files, FileMetadata},
 };
-use serde::{Deserialize, Serialize};
 
 struct Config {
     address: Box<dyn net::ToSocketAddrs<Iter = IntoIter<SocketAddr>> + Send + Sync>,
@@ -130,29 +127,31 @@ fn add_content(path: &Path) -> Result<Option<String>, std::io::Error> {
     }
 }
 
-fn create_and_run_server(config: &Config) -> std::io::Result<Server> {
+fn create_and_run_server(config: &Config) -> std::io::Result<actix_web::dev::Server> {
     log_normal(&format!(
         "starting server at: {:?}",
         config.address.to_socket_addrs()
     ));
-    let server = HttpServer::new(move || {
-        let cors = Cors::permissive();
-        App::new()
+    let server = actix_web::HttpServer::new(move || {
+        let cors = actix_cors::Cors::permissive();
+        actix_web::App::new()
             .wrap(cors)
-            .route("/", web::get().to(index))
-            .route("/files", web::get().to(get_files))
-            .service(fs::Files::new("/static", "./client-content/static").show_files_listing())
-            .service(fs::Files::new("/content", "./content").show_files_listing())
+            .route("/", actix_web::web::get().to(index))
+            .route("/files", actix_web::web::get().to(get_files))
+            .service(
+                actix_files::Files::new("/static", "./client-content/static").show_files_listing(),
+            )
+            .service(actix_files::Files::new("/content", "./content").show_files_listing())
     })
     .bind(config.address.as_ref())?;
     Ok(server.run())
 }
 
-async fn index(_req: HttpRequest) -> actix_web::Result<NamedFile> {
+async fn index(_req: actix_web::HttpRequest) -> actix_web::Result<actix_files::NamedFile> {
     let path: PathBuf = "./client-content/index.html".parse().unwrap();
-    Ok(NamedFile::open(path)?)
+    Ok(actix_files::NamedFile::open(path)?)
 }
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
 struct FileData {
     name: String,
     id: u64,
@@ -169,10 +168,10 @@ impl From<FileMetadata> for FileData {
     }
 }
 
-async fn get_files() -> HttpResponse {
+async fn get_files() -> actix_web::HttpResponse {
     let files = get_all_files();
     let body = serde_json::to_string(&files).unwrap();
-    HttpResponse::Ok()
+    actix_web::HttpResponse::Ok()
         .content_type("application/json")
         .body(body)
 }
@@ -195,7 +194,7 @@ mod tests {
         http::{self, header::ContentType},
         test,
     };
-    use pea_server::clean_up_dir;
+    use pea_server::utils::storage::clean_up_dir;
     use std::sync::Once;
 
     static INIT: Once = Once::new();
