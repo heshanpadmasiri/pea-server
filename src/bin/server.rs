@@ -161,11 +161,11 @@ struct FileData {
 
 impl From<FileMetadata> for FileData {
     fn from(value: FileMetadata) -> Self {
-        return Self {
+        Self {
             name: value.name,
             id: value.id,
             ty: value.ty,
-        };
+        }
     }
 }
 

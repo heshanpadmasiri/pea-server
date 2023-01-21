@@ -71,9 +71,20 @@ pub fn copy_files(src: &Path, dest: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn files(path: &Path) -> Result<Vec<FileMetadata>, ()> {
+#[derive(Debug)]
+pub enum FileErr {
+    PathDoesNotExist,
+}
+
+impl std::fmt::Display for FileErr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "file does not exists")
+    }
+}
+
+pub fn files(path: &Path) -> Result<Vec<FileMetadata>, FileErr> {
     if !path.is_dir() {
-        return Err(());
+        return Err(FileErr::PathDoesNotExist);
     }
     let mut metadata = Vec::new();
     for child_path in std::fs::read_dir(path)
@@ -83,10 +94,8 @@ pub fn files(path: &Path) -> Result<Vec<FileMetadata>, ()> {
     {
         if child_path.is_dir() {
             metadata.extend(files(&child_path)?);
-        } else {
-            if let Some(_) = child_path.extension() {
-                metadata.push(file_metadata(&child_path));
-            }
+        } else if child_path.extension().is_some() {
+            metadata.push(file_metadata(&child_path));
         }
     }
     Ok(metadata)
