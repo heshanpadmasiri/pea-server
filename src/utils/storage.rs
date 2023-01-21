@@ -13,11 +13,19 @@ pub struct FileMetadata {
 #[derive(Debug)]
 pub enum FileErr {
     PathDoesNotExist,
+    IndexDoesNotExist,
+    IndexInvalid,
+    IdInvalid,
 }
 
 impl std::fmt::Display for FileErr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "file does not exists")
+        match self {
+            FileErr::PathDoesNotExist => write!(f, "path does not exist"),
+            FileErr::IndexDoesNotExist => write!(f, "index file does not exits"),
+            FileErr::IndexInvalid => write!(f, "index invalid"),
+            FileErr::IdInvalid => write!(f, "id invalid"),
+        }
     }
 }
 
@@ -107,4 +115,27 @@ pub fn clean_up_dir(path: &Path) -> std::io::Result<()> {
         std::fs::remove_dir_all(path)?;
     }
     std::fs::create_dir(path)
+}
+
+pub fn get_file_path(index: &Path, id: u64) -> Result<PathBuf, FileErr> {
+    if !index.exists() {
+        return Err(FileErr::IndexDoesNotExist);
+    }
+    // TODO: change index to be an index file
+    else if !index.is_dir() {
+        return Err(FileErr::IndexInvalid);
+    }
+    let id = id.to_string();
+    for path in std::fs::read_dir(index)
+        .expect("expect iteration over index to succeed")
+        .flatten()
+        .map(|each| each.path())
+    {
+        if let Some(id_str) = path.file_stem() {
+            if id_str.to_string_lossy() == id {
+                return Ok(path);
+            }
+        }
+    }
+    Err(FileErr::IdInvalid)
 }

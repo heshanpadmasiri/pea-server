@@ -9,7 +9,7 @@ use std::{
 use pea_server::utils::{
     get_local_ip_address,
     log::{log_debug, log_normal, terminal_message},
-    storage::{files, FileMetadata},
+    storage::{files, get_file_path, FileMetadata},
 };
 
 struct Config {
@@ -139,7 +139,8 @@ fn create_and_run_server(config: &Config) -> std::io::Result<actix_web::dev::Ser
             .route("/", actix_web::web::get().to(index))
             .route("/files", actix_web::web::get().to(get_files))
             .service(
-                actix_web::web::resource("/content/{file_name}").route(actix_web::web::get().to(get_content))
+                actix_web::web::resource("/content/{file_name}")
+                    .route(actix_web::web::get().to(get_content)),
             )
             .service(
                 actix_files::Files::new("/static", "./client-content/static").show_files_listing(),
@@ -163,8 +164,14 @@ async fn get_files() -> actix_web::HttpResponse {
 }
 
 async fn get_content(req: actix_web::HttpRequest) -> actix_web::Result<actix_files::NamedFile> {
-    let file_name:String = req.match_info().query("file_name").parse().unwrap();
-    let file_path: PathBuf = format!("./content/{file_name}").parse().unwrap();
+    let file_name: String = req.match_info().query("file_name").parse().unwrap();
+    let file_id: Vec<u64> = file_name
+        .split(".")
+        .take(1)
+        .map(|id| id.parse::<u64>().unwrap())
+        .collect();
+    let file_id = file_id[0];
+    let file_path = get_file_path(&PathBuf::from(SERVER_CONTENT), file_id).unwrap();
     Ok(actix_files::NamedFile::open(file_path)?)
 }
 
