@@ -139,9 +139,11 @@ fn create_and_run_server(config: &Config) -> std::io::Result<actix_web::dev::Ser
             .route("/", actix_web::web::get().to(index))
             .route("/files", actix_web::web::get().to(get_files))
             .service(
+                actix_web::web::resource("/content/{file_name}").route(actix_web::web::get().to(get_content))
+            )
+            .service(
                 actix_files::Files::new("/static", "./client-content/static").show_files_listing(),
             )
-            .service(actix_files::Files::new("/content", "./content").show_files_listing())
     })
     .bind(config.address.as_ref())?;
     Ok(server.run())
@@ -151,6 +153,21 @@ async fn index(_req: actix_web::HttpRequest) -> actix_web::Result<actix_files::N
     let path: PathBuf = "./client-content/index.html".parse().unwrap();
     Ok(actix_files::NamedFile::open(path)?)
 }
+
+async fn get_files() -> actix_web::HttpResponse {
+    let files = get_all_files();
+    let body = serde_json::to_string(&files).unwrap();
+    actix_web::HttpResponse::Ok()
+        .content_type("application/json")
+        .body(body)
+}
+
+async fn get_content(req: actix_web::HttpRequest) -> actix_web::Result<actix_files::NamedFile> {
+    let file_name:String = req.match_info().query("file_name").parse().unwrap();
+    let file_path: PathBuf = format!("./content/{file_name}").parse().unwrap();
+    Ok(actix_files::NamedFile::open(file_path)?)
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
 struct FileData {
     name: String,
@@ -166,14 +183,6 @@ impl From<FileMetadata> for FileData {
             ty: value.ty,
         }
     }
-}
-
-async fn get_files() -> actix_web::HttpResponse {
-    let files = get_all_files();
-    let body = serde_json::to_string(&files).unwrap();
-    actix_web::HttpResponse::Ok()
-        .content_type("application/json")
-        .body(body)
 }
 
 fn get_all_files() -> Vec<FileData> {
