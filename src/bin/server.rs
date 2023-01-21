@@ -10,9 +10,7 @@ use actix_cors::Cors;
 use actix_files as fs;
 use actix_web::{dev::Server, web, App, HttpRequest, HttpResponse, HttpServer};
 use fs::NamedFile;
-use pea_server::{
-    files, get_local_ip_address, log_debug, log_normal, terminal_message, FileMetadata,
-};
+use pea_server::utils::{log::{terminal_message, log_normal, log_debug}, storage::{FileMetadata, files}, get_local_ip_address};
 use serde::{Deserialize, Serialize};
 
 struct Config {
@@ -195,7 +193,7 @@ mod tests {
         http::{self, header::ContentType},
         test,
     };
-    use pea_server::clean_up_dir;
+    use pea_server::utils::storage::clean_up_dir;
     use std::sync::Once;
 
     static INIT: Once = Once::new();
