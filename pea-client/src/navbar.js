@@ -1,21 +1,29 @@
 import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 import Container from "react-bootstrap/Container";
+import { LinkContainer } from "react-router-bootstrap";
 
 function navbar() {
   return (
     <Navbar bg="dark" variant="dark">
       <Container>
-        <Navbar.Brand href="/">PeaServer</Navbar.Brand>
+        <LinkContainer to="/">
+          <Navbar.Brand>PeaServer</Navbar.Brand>
+        </LinkContainer>
         <Nav className="me-auto">
-          <Nav.Link href="/">Home</Nav.Link>
-          <Nav.Link href="/videos">Videos</Nav.Link>
-          <Nav.Link href="/other">Other Files</Nav.Link>
+          <LinkContainer to="/">
+            <Nav.Link>Home</Nav.Link>
+          </LinkContainer>
+          <LinkContainer to="/videos">
+            <Nav.Link>Videos</Nav.Link>
+          </LinkContainer>
+          <LinkContainer to="/other">
+            <Nav.Link>Other Files</Nav.Link>
+          </LinkContainer>
         </Nav>
       </Container>
     </Navbar>
   );
 }
 
-
-export default navbar
+export default navbar;
