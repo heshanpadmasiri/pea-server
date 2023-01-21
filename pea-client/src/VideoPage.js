@@ -12,13 +12,14 @@ class VideoPage extends React.Component {
 
   render() {
     const { videos } = this.state;
+    console.log(videos);
     const videoTags = videos.map((each) => video_tag(each.name, each.id));
     return <Container className="p-3">{videoTags}</Container>;
   }
 }
 
 function video_tag(filename, id) {
-  const src = `${config.SERVER_URL}/content/${filename}`;
+  const src = `${config.SERVER_URL}/content/${id}`;
   return (
     <video key={id} controls>
       <source src={src} type="video/mp4"></source>
