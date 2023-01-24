@@ -1,6 +1,6 @@
 use std::{
     net::{self, SocketAddr},
-    path::{PathBuf},
+    path::PathBuf,
     time::Duration,
     vec::IntoIter,
 };
@@ -28,9 +28,7 @@ async fn main() -> std::io::Result<()> {
         "trying to run server on address: http://{}",
         address,
     ));
-    let config = Config {
-        address,
-    };
+    let config = Config { address };
     tokio::spawn(async move {
         // generate_static_content(&config).expect("generating static content should not fail");
         create_and_run_server(&config)
@@ -123,11 +121,7 @@ impl From<FileMetadata> for FileData {
 
 fn get_all_files() -> Vec<FileData> {
     let index = FileIndex::new(&PathBuf::from(SERVER_CONTENT));
-    index
-        .files()
-        .into_iter()
-        .map(|each| each.into())
-        .collect()
+    index.files().into_iter().map(|each| each.into()).collect()
 }
 
 #[cfg(test)]
@@ -135,10 +129,7 @@ mod tests {
     use std::{fs::File, io::Write, path::PathBuf};
 
     use crate::{create_and_run_server, index, Config};
-    use actix_web::{
-        http::{header::ContentType},
-        test,
-    };
+    use actix_web::{http::header::ContentType, test};
     use pea_server::utils::storage::clean_up_dir;
     use std::sync::Once;
 
@@ -173,7 +164,7 @@ mod tests {
         INIT.call_once(|| {
             let content_path = PathBuf::from("./client-content");
             let path = &content_path;
-            clean_up_dir(&path).expect("expect creating content dir to succeed");
+            clean_up_dir(path).expect("expect creating content dir to succeed");
             let mut index_file = File::create(path.join("./index.html"))
                 .expect("expect creating index.html to succeed");
             index_file

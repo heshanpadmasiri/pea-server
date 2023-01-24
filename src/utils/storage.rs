@@ -66,12 +66,8 @@ impl FileIndex {
 
     pub fn get_file_path(&self, id: u64) -> Result<PathBuf, FileErr> {
         match self.db.get(&id) {
-            Some(metadata) => {
-                return Ok(metadata.path.clone());
-            }
-            None => {
-                return Err(FileErr::IdInvalid);
-            }
+            Some(metadata) => Ok(metadata.path.clone()),
+            None => Err(FileErr::IdInvalid),
         }
     }
 
@@ -97,12 +93,8 @@ fn deserialize_db(path: &Path) -> Result<FileDB, FileErr> {
 fn read_index_file(path: &Path) -> Result<Vec<FileMetadata>, FileErr> {
     match std::fs::read_to_string(path) {
         Ok(content) => match serde_json::from_str::<Vec<FileMetadata>>(&content) {
-            Ok(res) => {
-                return Ok(res);
-            }
-            Err(_) => {
-                return Err(FileErr::IndexDoesNotExist);
-            }
+            Ok(res) => Ok(res),
+            Err(_) => Err(FileErr::IndexDoesNotExist),
         },
         Err(_) => Err(FileErr::IndexDoesNotExist),
     }
@@ -120,16 +112,12 @@ fn serialize_db(path: &Path, db: &FileDB) -> Result<(), FileErr> {
                 Ok(mut file) => {
                     file.write_all(body.as_bytes())
                         .expect("writing to index file must succeed");
-                    return Ok(());
+                    Ok(())
                 }
-                Err(_) => {
-                    return Err(FileErr::DBError);
-                }
+                Err(_) => Err(FileErr::DBError),
             }
         }
-        Err(_) => {
-            return Err(FileErr::DBError);
-        }
+        Err(_) => Err(FileErr::DBError),
     }
 }
 
