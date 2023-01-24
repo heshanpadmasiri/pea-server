@@ -17,6 +17,9 @@ function navbar() {
           <LinkContainer to="/videos">
             <Nav.Link>Videos</Nav.Link>
           </LinkContainer>
+          <LinkContainer to="/images">
+            <Nav.Link>Images</Nav.Link>
+          </LinkContainer>
           <LinkContainer to="/other">
             <Nav.Link>Other Files</Nav.Link>
           </LinkContainer>
