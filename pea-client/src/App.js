@@ -7,6 +7,7 @@ import Container from "react-bootstrap/Container";
 import VideoPage from "./VideoPage";
 import OtherFilePage from "./OtherFilePage";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import ImagePage from "./images";
 
 class App extends React.Component {
   constructor(props) {
@@ -51,10 +52,12 @@ class App extends React.Component {
     }
     const videos = files.filter((each) => each.ty === "mp4");
     const other_files = files.filter((each) => each.ty !== "mp4");
+    const image_files = files.filter((each) => is_image_type(each.ty));
     const router = createBrowserRouter([
       { path: "/", element: <VideoPage videos={videos} /> },
       { path: "/videos", element: <VideoPage videos={videos} /> },
       { path: "/other", element: <OtherFilePage files={other_files} /> },
+      { path: "/images", element: <ImagePage images={image_files} /> },
     ]);
     return (
       <Container className="p-3">
@@ -62,6 +65,11 @@ class App extends React.Component {
       </Container>
     );
   }
+}
+
+function is_image_type(ty) {
+  const image_tys = ["jpg", "jpeg"]
+  return image_tys.includes(ty)
 }
 
 export default App;
