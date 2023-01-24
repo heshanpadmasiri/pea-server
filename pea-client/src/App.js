@@ -7,6 +7,7 @@ import Container from "react-bootstrap/Container";
 import VideoPage from "./VideoPage";
 import OtherFilePage from "./OtherFilePage";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import ImagePage from "./images";
 
 class App extends React.Component {
   constructor(props) {
@@ -56,7 +57,7 @@ class App extends React.Component {
       { path: "/", element: <VideoPage videos={videos} /> },
       { path: "/videos", element: <VideoPage videos={videos} /> },
       { path: "/other", element: <OtherFilePage files={other_files} /> },
-      { path: "/images", element: <OtherFilePage files={image_files} /> },
+      { path: "/images", element: <ImagePage images={image_files} /> },
     ]);
     return (
       <Container className="p-3">
