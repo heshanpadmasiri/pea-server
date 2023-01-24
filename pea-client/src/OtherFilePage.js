@@ -22,7 +22,7 @@ class OtherFilePage extends React.Component {
 }
 
 function file_tag(filename, id) {
-  const src = `${config.SERVER_URL}/content/${filename}`;
+  const src = `${config.SERVER_URL}/content/${id}`;
   return (
     <li key={id}>
       <a href={src}>{filename}</a>{" "}
