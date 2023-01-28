@@ -1,5 +1,6 @@
 import navbar from "./navbar";
 import config from "./config.json";
+import axios from "axios";
 
 import React from "react";
 import { useForm } from "react-hook-form";
@@ -13,12 +14,15 @@ function UploadPage() {
   const onSubmit = async (data) => {
     const formData = new FormData();
     formData.append("file", data.file[0]);
-
-    const res = await fetch(`${config.SERVER_URL}/file`, {
-      method: "POST",
-      body: formData,
-    }).then((res) => res.json());
-    alert(JSON.stringify(`${res.message}, status: ${res.status}`));
+    const post_config = {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      }
+    }
+    axios
+      .post(`${config.SERVER_URL}/file`, formData, post_config)
+      .then((res) => console.log(res))
+      .catch((err) => console.error(err));
   };
 
   return (
