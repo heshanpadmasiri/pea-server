@@ -8,6 +8,7 @@ import VideoPage from "./VideoPage";
 import OtherFilePage from "./OtherFilePage";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import ImagePage from "./images";
+import upload_page from "./MainPage";
 
 class App extends React.Component {
   constructor(props) {
@@ -53,8 +54,9 @@ class App extends React.Component {
     const videos = files.filter((each) => each.ty === "mp4");
     const other_files = files.filter((each) => each.ty !== "mp4");
     const image_files = files.filter((each) => is_image_type(each.ty));
+    const main_page = upload_page();
     const router = createBrowserRouter([
-      { path: "/", element: <VideoPage videos={videos} /> },
+      { path: "/", element: main_page },
       { path: "/videos", element: <VideoPage videos={videos} /> },
       { path: "/other", element: <OtherFilePage files={other_files} /> },
       { path: "/images", element: <ImagePage images={image_files} /> },
