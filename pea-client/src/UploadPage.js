@@ -15,6 +15,10 @@ function UploadPage() {
     const formData = new FormData();
     formData.append("file", data.file[0]);
     const post_config = {
+      onUploadProgress: progressEvent => {
+          var percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          console.log(percentCompleted)
+      },
       headers: {
         'Content-Type': 'multipart/form-data',
       }
