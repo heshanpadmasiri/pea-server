@@ -5,12 +5,12 @@ use std::{
     vec::IntoIter,
 };
 
+use futures_util::StreamExt as _;
 use pea_server::utils::{
     get_local_ip_address,
     log::{log_debug, log_normal, terminal_message},
-    storage::{FileIndex, FileMetadata},
+    storage::{create_file, FileIndex, FileMetadata},
 };
-use futures_util::StreamExt as _;
 
 struct Config {
     address: Box<dyn net::ToSocketAddrs<Iter = IntoIter<SocketAddr>> + Send + Sync>,
@@ -99,11 +99,27 @@ async fn get_files() -> actix_web::HttpResponse {
 async fn post_file(
     mut payload: actix_multipart::Multipart,
 ) -> actix_web::Result<actix_web::HttpResponse> {
-    // TODO: get the file name and file content here
+    let mut index = FileIndex::new(&PathBuf::from(SERVER_CONTENT));
     while let Some(item) = payload.next().await {
-        let field = item?;
+        let mut field = item?;
         let content_disposition = field.content_disposition();
-        let file_name = content_disposition.get_filename();
+        match content_disposition.get_filename() {
+            None => {
+                return Ok(actix_web::HttpResponse::Forbidden().into());
+            }
+            Some(file_name) => {
+                let mut content: Vec<u8> = Vec::new();
+                let file_name = file_name.to_string();
+                while let Some(chunk) = field.next().await {
+                    for each in chunk? {
+                        content.push(each.into());
+                    }
+                }
+                if create_file(&mut index, file_name, &content).is_err() {
+                    return Ok(actix_web::HttpResponse::InternalServerError().into());
+                }
+            }
+        }
     }
     Ok(actix_web::HttpResponse::Ok().into())
 }
@@ -145,11 +161,20 @@ fn all_files() -> Vec<FileData> {
 
 #[cfg(test)]
 mod tests {
-    use std::{fs::File, io::Write, path::PathBuf};
+    use std::{
+        fs::File,
+        io::{Read, Write},
+        path::PathBuf,
+    };
 
-    use crate::{create_and_run_server, index, post_file, Config, FileUpload};
-    use actix_web::{http::header::{ContentType, HeaderMap, self}, test, web::{self, Bytes}, App};
-    use pea_server::utils::storage::clean_up_dir;
+    use crate::{create_and_run_server, index, post_file, Config, SERVER_CONTENT};
+    use actix_web::{
+        http::header::{self, ContentType, HeaderMap},
+        test,
+        web::{self, Bytes},
+        App,
+    };
+    use pea_server::utils::storage::{clean_up_dir, FileIndex};
     use std::sync::Once;
 
     static INIT: Once = Once::new();
@@ -187,11 +212,11 @@ mod tests {
         let bytes = Bytes::from(
             "testasdadsad\r\n\
              --abbc761f78ff4d7cb7573b5a23f96ef0\r\n\
-             Content-Disposition: form-data; name=\"file\"; filename=\"fn.txt\"\r\n\
+             Content-Disposition: form-data; name=\"file\"; filename=\"f1.txt\"\r\n\
              Content-Type: text/plain; charset=utf-8\r\nContent-Length: 4\r\n\r\n\
              test\r\n\
              --abbc761f78ff4d7cb7573b5a23f96ef0\r\n\
-             Content-Disposition: form-data; name=\"file\"; filename=\"fn.txt\"\r\n\
+             Content-Disposition: form-data; name=\"file\"; filename=\"f2.txt\"\r\n\
              Content-Type: text/plain; charset=utf-8\r\nContent-Length: 4\r\n\r\n\
              data\r\n\
              --abbc761f78ff4d7cb7573b5a23f96ef0--\r\n",
@@ -203,18 +228,27 @@ mod tests {
                 "multipart/mixed; boundary=\"abbc761f78ff4d7cb7573b5a23f96ef0\"",
             ),
         );
-        let mut request = test::TestRequest::post()
-            .uri("/file")
-            .set_payload(bytes);
-        for (k, v)  in headers {
+        let mut request = test::TestRequest::post().uri("/file").set_payload(bytes);
+        for (k, v) in headers {
             request = request.insert_header((k, v));
         }
         let request = request.to_request();
         let resp = test::call_service(&server, request).await;
-        println!("{:?}", resp.response().body());
         assert!(resp.status().is_success());
-        // TODO: test file actually to saved to disk
-        // TODO: test file got added to index (i.e now we can get that file by index)
+        let expected = [("f1.txt", "test"), ("f2.txt", "data")];
+        let index = FileIndex::new(&PathBuf::from(SERVER_CONTENT));
+        let indexed_files: Vec<String> = index.files().into_iter().map(|each| {each.name}).collect();
+        for (file_name, content) in expected {
+            let file_path = PathBuf::from("./recieved").join(file_name);
+            let mut file =
+                std::fs::File::open(&file_path).expect("expect file to exist");
+            let mut actual = Vec::new();
+            file.read_to_end(&mut actual).expect("expect file reading to succeed");
+            assert_eq!(actual, content.as_bytes());
+            std::fs::remove_file(file_path).expect("expect deleting file to succeed");
+            assert!(indexed_files.iter().find(|name| { **name == file_name.to_string() }).is_some());
+        }
+        std::fs::remove_file("./content/index.json").expect("expect deleting index to succeed");
     }
 
     // every test properly creating the content dir

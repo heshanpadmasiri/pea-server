@@ -2,7 +2,7 @@ use std::{
     collections::{hash_map::DefaultHasher, HashMap},
     hash::{Hash, Hasher},
     io::Write,
-    path::{Path, PathBuf},
+    path::{Path, PathBuf}, fs::File,
 };
 
 use crate::utils::log::log_normal;
@@ -24,6 +24,7 @@ pub enum FileErr {
     IndexInvalid,
     IdInvalid,
     DBError,
+    FailedToCreateFile
 }
 
 impl std::fmt::Display for FileErr {
@@ -34,6 +35,7 @@ impl std::fmt::Display for FileErr {
             FileErr::IndexInvalid => write!(f, "index invalid"),
             FileErr::IdInvalid => write!(f, "id invalid"),
             FileErr::DBError => write!(f, "db error"),
+            FileErr::FailedToCreateFile => write!(f, "failed to create file"),
         }
     }
 }
@@ -74,13 +76,56 @@ impl FileIndex {
     pub fn add_dir(&mut self, path: &Path) -> Result<(), FileErr> {
         let new_files = files_in_dir(path)?;
         for each in new_files {
-            if self.db.contains_key(&each.id) {
-                panic!("duplicate id for {:?}", each);
-            }
-            self.db.insert(each.id, each);
+            self.add_file_to_db(each);
         }
         serialize_db(&self.index_file, &self.db)
     }
+
+    fn add_file(&mut self, path:&Path) -> Result<(), FileErr> { 
+        if path.is_dir() {
+            panic!("use `add_dir` to add directory");
+        }
+        self.add_file_to_db(file_metadata(path));
+        serialize_db(&self.index_file, &self.db)
+    }
+
+    fn add_file_to_db(&mut self, file: FileMetadata) {
+        if self.db.contains_key(&file.id) {
+            panic!("duplicate id for {:?}", file);
+        }
+        self.db.insert(file.id, file);
+
+    }
+}
+
+pub fn create_file(index: &mut FileIndex, filen_name: String, content: &[u8]) -> Result<(), FileErr> {
+    let recieved_dir = PathBuf::from("./recieved");
+    if !recieved_dir.exists() {
+        log_debug("creating recieved dir");
+        if std::fs::create_dir(&recieved_dir).is_err() {
+            return Err(FileErr::FailedToCreateFile);
+        }
+    }
+    let path = recieved_dir.join(filen_name);
+    match File::create(&path) {
+        Ok(mut file) => {
+            match Write::write_all(&mut file, content) {
+                Ok(_) => {
+                    index.add_file(&path)
+                }
+                Err(_) => { 
+                    Err(FileErr::FailedToCreateFile)
+                }
+            }
+        }
+        Err(_) => {
+            Err(FileErr::FailedToCreateFile)
+        }
+    }
+    // let mut file = std::fs::File::create(file_name).expect("expect file creation to succeed");
+    // while let Some(chunk) = field.next().await {
+    //     std::io::Write::write_all(&mut file, &chunk?).expect("expect writing to file to succeed");
+    // }
 }
 
 fn deserialize_db(path: &Path) -> Result<FileDB, FileErr> {
