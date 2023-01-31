@@ -234,19 +234,23 @@ mod tests {
         }
         let request = request.to_request();
         let resp = test::call_service(&server, request).await;
+        println!("{:?}", resp);
         assert!(resp.status().is_success());
         let expected = [("f1.txt", "test"), ("f2.txt", "data")];
         let index = FileIndex::new(&PathBuf::from(SERVER_CONTENT));
-        let indexed_files: Vec<String> = index.files().into_iter().map(|each| {each.name}).collect();
+        let indexed_files: Vec<String> = index.files().into_iter().map(|each| each.name).collect();
         for (file_name, content) in expected {
             let file_path = PathBuf::from("./recieved").join(file_name);
-            let mut file =
-                std::fs::File::open(&file_path).expect("expect file to exist");
+            let mut file = std::fs::File::open(&file_path).expect("expect file to exist");
             let mut actual = Vec::new();
-            file.read_to_end(&mut actual).expect("expect file reading to succeed");
+            file.read_to_end(&mut actual)
+                .expect("expect file reading to succeed");
             assert_eq!(actual, content.as_bytes());
             std::fs::remove_file(file_path).expect("expect deleting file to succeed");
-            assert!(indexed_files.iter().find(|name| { **name == file_name.to_string() }).is_some());
+            assert!(indexed_files
+                .iter()
+                .find(|name| { **name == file_name.to_string() })
+                .is_some());
         }
         std::fs::remove_file("./content/index.json").expect("expect deleting index to succeed");
     }

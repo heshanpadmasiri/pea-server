@@ -1,13 +1,14 @@
 use std::{
     collections::{hash_map::DefaultHasher, HashMap},
+    fs::File,
     hash::{Hash, Hasher},
     io::Write,
-    path::{Path, PathBuf}, fs::File,
+    path::{Path, PathBuf},
 };
 
 use crate::utils::log::log_normal;
 
-use super::log::log_debug;
+use super::log::{log_debug, log_error};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Clone)]
 pub struct FileMetadata {
@@ -24,7 +25,7 @@ pub enum FileErr {
     IndexInvalid,
     IdInvalid,
     DBError,
-    FailedToCreateFile
+    FailedToCreateFile,
 }
 
 impl std::fmt::Display for FileErr {
@@ -81,7 +82,7 @@ impl FileIndex {
         serialize_db(&self.index_file, &self.db)
     }
 
-    fn add_file(&mut self, path:&Path) -> Result<(), FileErr> { 
+    fn add_file(&mut self, path: &Path) -> Result<(), FileErr> {
         if path.is_dir() {
             panic!("use `add_dir` to add directory");
         }
@@ -94,38 +95,37 @@ impl FileIndex {
             panic!("duplicate id for {:?}", file);
         }
         self.db.insert(file.id, file);
-
     }
 }
 
-pub fn create_file(index: &mut FileIndex, filen_name: String, content: &[u8]) -> Result<(), FileErr> {
+pub fn create_file(
+    index: &mut FileIndex,
+    filen_name: String,
+    content: &[u8],
+) -> Result<(), FileErr> {
     let recieved_dir = PathBuf::from("./recieved");
     if !recieved_dir.exists() {
         log_debug("creating recieved dir");
-        if std::fs::create_dir(&recieved_dir).is_err() {
+        let result = std::fs::create_dir(&recieved_dir);
+        if result.is_err() {
+            log_error(&format!("recieved_dir creation failed due to {:?}", result));
             return Err(FileErr::FailedToCreateFile);
         }
     }
     let path = recieved_dir.join(filen_name);
     match File::create(&path) {
-        Ok(mut file) => {
-            match Write::write_all(&mut file, content) {
-                Ok(_) => {
-                    index.add_file(&path)
-                }
-                Err(_) => { 
-                    Err(FileErr::FailedToCreateFile)
-                }
+        Ok(mut file) => match Write::write_all(&mut file, content) {
+            Ok(_) => index.add_file(&path),
+            Err(err) => {
+                log_error(&format!("failed to write to file failed due to {:?}", err));
+                Err(FileErr::FailedToCreateFile)
             }
-        }
-        Err(_) => {
+        },
+        Err(err) => {
+            log_error(&format!("failed to create file failed due to {:?}", err));
             Err(FileErr::FailedToCreateFile)
         }
     }
-    // let mut file = std::fs::File::create(file_name).expect("expect file creation to succeed");
-    // while let Some(chunk) = field.next().await {
-    //     std::io::Write::write_all(&mut file, &chunk?).expect("expect writing to file to succeed");
-    // }
 }
 
 fn deserialize_db(path: &Path) -> Result<FileDB, FileErr> {
@@ -147,22 +147,38 @@ fn read_index_file(path: &Path) -> Result<Vec<FileMetadata>, FileErr> {
 
 fn serialize_db(path: &Path, db: &FileDB) -> Result<(), FileErr> {
     let values: Vec<FileMetadata> = db.values().cloned().collect();
-    match serde_json::to_string_pretty(&values) {
-        Ok(body) => {
-            let f = std::fs::OpenOptions::new()
-                .write(true)
-                .create(true)
-                .open(path);
-            match f {
-                Ok(mut file) => {
-                    file.write_all(body.as_bytes())
-                        .expect("writing to index file must succeed");
-                    Ok(())
+    let parent_dir = path.parent().unwrap();
+    match std::fs::create_dir_all(parent_dir) {
+        Ok(_) => match serde_json::to_string_pretty(&values) {
+            Ok(body) => {
+                let f = std::fs::OpenOptions::new()
+                    .write(true)
+                    .create(true)
+                    .open(path);
+                match f {
+                    Ok(mut file) => {
+                        file.write_all(body.as_bytes())
+                            .expect("writing to index file must succeed");
+                        Ok(())
+                    }
+                    Err(err) => {
+                        log_error(&format!("faild to write to index file due to {:?}", err));
+                        Err(FileErr::DBError)
+                    }
                 }
-                Err(_) => Err(FileErr::DBError),
             }
+            Err(err) => {
+                log_error(&format!("db serialization failed due to {:?}", err));
+                Err(FileErr::DBError)
+            }
+        },
+        Err(err) => {
+            log_error(&format!(
+                "failed to create dir: {:?} to store index file due to {:?}",
+                parent_dir, err
+            ));
+            Err(FileErr::DBError)
         }
-        Err(_) => Err(FileErr::DBError),
     }
 }
 

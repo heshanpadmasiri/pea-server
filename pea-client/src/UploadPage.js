@@ -55,10 +55,10 @@ function UploadPage() {
 
 function upload_progress(progress) {
     return (progress === 0) ? (<p>no active upload</p>) : 
-                             (<div> 
-                                <label for="upload">Upload progress {progress}%</label>
-                                <progress id="upload" value={progress} max="100"> {progress}% </progress>
-                              </div>)
+                              (<div> 
+                                 <label for="upload">Upload progress {progress}%</label>
+                                 <progress id="upload" value={progress} max="100"> {progress}% </progress>
+                               </div>)
 }
 
 export default UploadPage;
