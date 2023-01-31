@@ -2,13 +2,14 @@ import navbar from "./navbar";
 import config from "./config.json";
 import axios from "axios";
 
-import React from "react";
+import React, { useState} from "react";
 import { useForm } from "react-hook-form";
 
 import Container from "react-bootstrap/Container";
 
 function UploadPage() {
   const { register, handleSubmit } = useForm();
+  const [updateProgress, setUpdateProgress ] = useState(0);
   const nav = navbar();
 
   const onSubmit = async (data) => {
@@ -17,7 +18,12 @@ function UploadPage() {
     const post_config = {
       onUploadProgress: progressEvent => {
           var percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-          console.log(percentCompleted)
+          if (percentCompleted == 100) {
+            setUpdateProgress(0);
+          }
+          else {
+            setUpdateProgress(percentCompleted);
+          }
       },
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -32,6 +38,7 @@ function UploadPage() {
   return (
     <Container className="p-3">
       {nav}
+      <p> Update progress {updateProgress}% </p>
       <form onSubmit={handleSubmit(onSubmit)}>
         <input type="file" {...register("file")} />
         <input type="submit" />
