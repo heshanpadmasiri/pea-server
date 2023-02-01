@@ -26,8 +26,7 @@ async fn main() -> std::io::Result<()> {
             .unwrap_or_else(|| SocketAddr::from((get_local_ip_address(), 8080)).to_string()),
     );
     log_normal(&format!(
-        "trying to run server on address: http://{}",
-        address,
+        "trying to run server on address: http://{address}"
     ));
     let config = Config { address };
     tokio::spawn(async move {
@@ -112,7 +111,7 @@ async fn post_file(
                 let file_name = file_name.to_string();
                 while let Some(chunk) = field.next().await {
                     for each in chunk? {
-                        content.push(each.into());
+                        content.push(each);
                     }
                 }
                 if create_file(&mut index, file_name, &content).is_err() {
@@ -234,7 +233,6 @@ mod tests {
         }
         let request = request.to_request();
         let resp = test::call_service(&server, request).await;
-        println!("{:?}", resp);
         assert!(resp.status().is_success());
         let expected = [("f1.txt", "test"), ("f2.txt", "data")];
         let index = FileIndex::new(&PathBuf::from(SERVER_CONTENT));
@@ -249,8 +247,7 @@ mod tests {
             std::fs::remove_file(file_path).expect("expect deleting file to succeed");
             assert!(indexed_files
                 .iter()
-                .find(|name| { **name == file_name.to_string() })
-                .is_some());
+                .any(|name| { name == &file_name.to_string() }));
         }
         std::fs::remove_file("./content/index.json").expect("expect deleting index to succeed");
     }
