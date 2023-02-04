@@ -2,13 +2,29 @@ import Container from "react-bootstrap/Container";
 import React from "react";
 import config from "./config.json";
 import navbar from "./navbar";
+import axios from "axios";
 
 class VideoPage extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      videos: props.videos,
+      videos: [],
     };
+  }
+
+  componentDidMount() {
+    this.get_videos();
+  }
+
+  get_videos() {
+    axios
+      .get(`${config.SERVER_URL}/files/mp4`)
+      .then((res) => {
+        this.setState({
+          videos: res.data,
+        });
+      })
+      .catch((err) => console.error(err));
   }
 
   render() {
@@ -16,7 +32,12 @@ class VideoPage extends React.Component {
     console.log(videos);
     const videoTags = videos.map((each) => video_tag(each.name, each.id));
     const nav = navbar();
-    return (<Container className="p-3">{nav}{videoTags}</Container>);
+    return (
+      <Container className="p-3">
+        {nav}
+        {videoTags}
+      </Container>
+    );
   }
 }
 
