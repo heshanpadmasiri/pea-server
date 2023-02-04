@@ -6,9 +6,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::utils::log::log_normal;
-
-use super::log::{log_debug, log_error};
+use log::{debug, error, info};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Clone)]
 pub struct FileMetadata {
@@ -53,7 +51,7 @@ impl FileIndex {
         let db = match deserialize_db(index_file) {
             Ok(current) => current,
             Err(_) => {
-                log_debug("empty index");
+                debug!("empty index");
                 HashMap::new()
             }
         };
@@ -113,10 +111,10 @@ pub fn create_file(
 ) -> Result<(), FileErr> {
     let recieved_dir = PathBuf::from("./recieved");
     if !recieved_dir.exists() {
-        log_debug("creating recieved dir");
+        info!("creating recieved dir");
         let result = std::fs::create_dir(&recieved_dir);
         if result.is_err() {
-            log_error(&format!("recieved_dir creation failed due to {result:?}"));
+            error!("recieved_dir creation failed due to {result:?}");
             return Err(FileErr::FailedToCreateFile);
         }
     }
@@ -125,12 +123,12 @@ pub fn create_file(
         Ok(mut file) => match Write::write_all(&mut file, content) {
             Ok(_) => index.add_file(&path),
             Err(err) => {
-                log_error(&format!("failed to write to file failed due to {err:?}"));
+                error!("failed to write to file failed due to {err:?}");
                 Err(FileErr::FailedToCreateFile)
             }
         },
         Err(err) => {
-            log_error(&format!("failed to create file failed due to {err:?}"));
+            error!("failed to create file failed due to {err:?}");
             Err(FileErr::FailedToCreateFile)
         }
     }
@@ -170,20 +168,18 @@ fn serialize_db(path: &Path, db: &FileDB) -> Result<(), FileErr> {
                         Ok(())
                     }
                     Err(err) => {
-                        log_error(&format!("faild to write to index file due to {err:?}"));
+                        error!("faild to write to index file due to {err:?}");
                         Err(FileErr::DBError)
                     }
                 }
             }
             Err(err) => {
-                log_error(&format!("db serialization failed due to {err:?}"));
+                error!("db serialization failed due to {err:?}");
                 Err(FileErr::DBError)
             }
         },
         Err(err) => {
-            log_error(&format!(
-                "failed to create dir: {parent_dir:?} to store index file due to {err:?}"
-            ));
+            error!("failed to create dir: {parent_dir:?} to store index file due to {err:?}");
             Err(FileErr::DBError)
         }
     }
@@ -258,7 +254,7 @@ pub fn copy_files(src: &Path, dest: &Path) -> std::io::Result<()> {
                 .expect("expect extracting source directory name to succeed"),
         );
         if !dest_dir.exists() {
-            log_normal(&format!("creating directory: {dest_dir:?}"));
+            info!("creating directory: {dest_dir:?}");
             std::fs::create_dir_all(&dest_dir)?;
         }
         for file in std::fs::read_dir(src)
