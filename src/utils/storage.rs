@@ -212,12 +212,7 @@ fn file_metadata(path: &Path) -> FileMetadata {
         .expect("expect valid file name")
         .to_string();
     let mut hasher = DefaultHasher::new();
-    let file_stem = path
-        .file_stem()
-        .expect("expect file stem")
-        .to_str()
-        .expect("expect valid file name");
-    file_stem.hash(&mut hasher);
+    path.hash(&mut hasher);
     let id = hasher.finish();
     let ty = path
         .extension()
