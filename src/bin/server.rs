@@ -27,7 +27,7 @@ async fn main() -> std::io::Result<()> {
     let index_path = std::env::args()
         .nth(1)
         .or_else(|| Some("./content/index.json".to_string()))
-        .map(|path| PathBuf::from(path))
+        .map(PathBuf::from)
         .unwrap();
     let address = Box::new(
         std::env::args()
@@ -119,7 +119,6 @@ async fn post_file(
     mut payload: actix_multipart::Multipart,
     state: State,
 ) -> actix_web::Result<actix_web::HttpResponse> {
-    let mut index = state.file_index.lock().unwrap();
     while let Some(item) = payload.next().await {
         let mut field = item?;
         let content_disposition = field.content_disposition();
@@ -135,6 +134,7 @@ async fn post_file(
                         content.push(each);
                     }
                 }
+                let mut index = state.file_index.lock().unwrap();
                 if create_file(&mut index, file_name, &content).is_err() {
                     return Ok(actix_web::HttpResponse::InternalServerError().into());
                 }
