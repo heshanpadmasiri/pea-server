@@ -86,6 +86,7 @@ fn create_and_run_server(config: Config) -> std::io::Result<actix_web::dev::Serv
             .route("/", actix_web::web::get().to(index))
             .route("/files", actix_web::web::get().to(get_files))
             .route("/file", actix_web::web::post().to(post_file))
+            .route("/files/{type}", actix_web::web::get().to(get_file_by_type))
             .service(
                 actix_web::web::resource("/content/{file_name}")
                     .route(actix_web::web::get().to(get_content)),
@@ -143,9 +144,16 @@ async fn post_file(
     Ok(actix_web::HttpResponse::Ok().into())
 }
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-struct FileUpload {
-    name: String,
+async fn get_file_by_type(
+    path: actix_web::web::Path<String>,
+    state: State,
+) -> actix_web::Result<actix_web::HttpResponse> {
+    let file_type = path.into_inner();
+    let index = state.file_index.lock().unwrap();
+    let body = serde_json::to_string(&index.files_of_type(file_type)).unwrap();
+    Ok(actix_web::HttpResponse::Ok()
+        .content_type("application/json")
+        .body(body))
 }
 
 async fn get_content(
@@ -157,6 +165,11 @@ async fn get_content(
     let file_id = file_name.trim().parse::<u64>().unwrap();
     let file_path = index.get_file_path(file_id).unwrap();
     Ok(actix_files::NamedFile::open(file_path)?)
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+struct FileUpload {
+    name: String,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
@@ -189,14 +202,14 @@ mod tests {
         sync::Mutex,
     };
 
-    use crate::{create_and_run_server, index, post_file, Config, ServerState};
+    use crate::{create_and_run_server, get_file_by_type, index, post_file, Config, ServerState};
     use actix_web::{
         http::header::{self, ContentType, HeaderMap},
         test,
         web::{self, Bytes},
         App,
     };
-    use pea_server::utils::storage::{clean_up_dir, FileIndex};
+    use pea_server::utils::storage::{clean_up_dir, FileIndex, FileMetadata};
     use std::sync::Once;
 
     static INIT: Once = Once::new();
@@ -283,6 +296,50 @@ mod tests {
                 .any(|name| { name == &file_name.to_string() }));
         }
         std::fs::remove_file("./content/index.json").expect("expect deleting index to succeed");
+    }
+
+    #[actix_web::test]
+    async fn can_get_files_by_type() {
+        initialize();
+        let test_index_path = PathBuf::from("./get_files_by_index_test.json");
+        let files = vec![
+            FileMetadata {
+                name: "1.txt".to_string(),
+                id: 1,
+                ty: "txt".to_string(),
+                path: PathBuf::from("./dummy-file/1.txt"),
+            },
+            FileMetadata {
+                name: "2.mp4".to_string(),
+                id: 2,
+                ty: "mp4".to_string(),
+                path: PathBuf::from("./dummy-file/2.mp4"),
+            },
+        ];
+        let body = serde_json::to_string_pretty(&files).unwrap();
+        std::fs::write(&test_index_path, body).expect("expect creating index file to succeed");
+        let server = test::init_service(
+            App::new()
+                .app_data(actix_web::web::Data::new(ServerState {
+                    file_index: Mutex::new(FileIndex::new(&test_index_path)),
+                }))
+                .route("/files/{type}", web::get().to(get_file_by_type)),
+        )
+        .await;
+        let request = test::TestRequest::get().uri("/files/txt").to_request();
+        let response = test::call_service(&server, request).await;
+        assert!(response.status().is_success());
+        let response_body: Vec<FileMetadata> = test::read_body_json(response).await;
+        assert_eq!(
+            response_body,
+            vec![FileMetadata {
+                name: "1.txt".to_string(),
+                id: 1,
+                ty: "txt".to_string(),
+                path: PathBuf::from("./dummy-file/1.txt"),
+            },]
+        );
+        std::fs::remove_file(test_index_path).expect("expect cleaning test index file to succeed");
     }
 
     // every test properly creating the content dir

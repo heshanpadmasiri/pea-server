@@ -67,6 +67,14 @@ impl FileIndex {
         self.db.values().cloned().collect()
     }
 
+    pub fn files_of_type(&self, ty: String) -> Vec<FileMetadata> {
+        self.db
+            .values()
+            .filter(|each| each.ty == ty)
+            .cloned()
+            .collect()
+    }
+
     pub fn get_file_path(&self, id: u64) -> Result<PathBuf, FileErr> {
         match self.db.get(&id) {
             Some(metadata) => Ok(metadata.path.clone()),
