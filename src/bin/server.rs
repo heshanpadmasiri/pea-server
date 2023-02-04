@@ -1,6 +1,7 @@
 use std::{
     net::{self, SocketAddr},
     path::PathBuf,
+    sync::Mutex,
     time::Duration,
     vec::IntoIter,
 };
@@ -14,24 +15,35 @@ use pea_server::utils::{
 
 struct Config {
     address: Box<dyn net::ToSocketAddrs<Iter = IntoIter<SocketAddr>> + Send + Sync>,
+    index_path: PathBuf,
 }
 
-const SERVER_CONTENT: &str = "./content/index.json";
+struct ServerState {
+    file_index: Mutex<FileIndex>,
+}
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    let index_path = std::env::args()
+        .nth(1)
+        .or_else(|| Some("./content/index.json".to_string()))
+        .map(|path| PathBuf::from(path))
+        .unwrap();
     let address = Box::new(
         std::env::args()
-            .nth(1)
+            .nth(2)
             .unwrap_or_else(|| SocketAddr::from((get_local_ip_address(), 8080)).to_string()),
     );
     log_normal(&format!(
         "trying to run server on address: http://{address}"
     ));
-    let config = Config { address };
+    let config = Config {
+        address,
+        index_path,
+    };
     tokio::spawn(async move {
         // generate_static_content(&config).expect("generating static content should not fail");
-        create_and_run_server(&config)
+        create_and_run_server(config)
             .expect("server creation should not fail")
             .await
             .expect("server running should not fail");
@@ -58,14 +70,18 @@ fn shutdown_server() {
     std::process::exit(0);
 }
 
-fn create_and_run_server(config: &Config) -> std::io::Result<actix_web::dev::Server> {
+fn create_and_run_server(config: Config) -> std::io::Result<actix_web::dev::Server> {
     log_normal(&format!(
         "starting server at: {:?}",
         config.address.to_socket_addrs()
     ));
+    let server_state = actix_web::web::Data::new(ServerState {
+        file_index: Mutex::new(FileIndex::new(&config.index_path)),
+    });
     let server = actix_web::HttpServer::new(move || {
         let cors = actix_cors::Cors::permissive();
         actix_web::App::new()
+            .app_data(server_state.clone())
             .wrap(cors)
             .route("/", actix_web::web::get().to(index))
             .route("/files", actix_web::web::get().to(get_files))
@@ -87,8 +103,11 @@ async fn index(_req: actix_web::HttpRequest) -> actix_web::Result<actix_files::N
     Ok(actix_files::NamedFile::open(path)?)
 }
 
-async fn get_files() -> actix_web::HttpResponse {
-    let files = all_files();
+type State = actix_web::web::Data<ServerState>;
+
+async fn get_files(state: State) -> actix_web::HttpResponse {
+    let index = state.file_index.lock().unwrap();
+    let files = all_files(&index);
     let body = serde_json::to_string(&files).unwrap();
     actix_web::HttpResponse::Ok()
         .content_type("application/json")
@@ -97,8 +116,9 @@ async fn get_files() -> actix_web::HttpResponse {
 
 async fn post_file(
     mut payload: actix_multipart::Multipart,
+    state: State,
 ) -> actix_web::Result<actix_web::HttpResponse> {
-    let mut index = FileIndex::new(&PathBuf::from(SERVER_CONTENT));
+    let mut index = state.file_index.lock().unwrap();
     while let Some(item) = payload.next().await {
         let mut field = item?;
         let content_disposition = field.content_disposition();
@@ -128,10 +148,13 @@ struct FileUpload {
     name: String,
 }
 
-async fn get_content(req: actix_web::HttpRequest) -> actix_web::Result<actix_files::NamedFile> {
+async fn get_content(
+    req: actix_web::HttpRequest,
+    state: State,
+) -> actix_web::Result<actix_files::NamedFile> {
+    let index = state.file_index.lock().unwrap();
     let file_name: String = req.match_info().query("file_name").parse().unwrap();
     let file_id = file_name.trim().parse::<u64>().unwrap();
-    let index = FileIndex::new(&PathBuf::from(SERVER_CONTENT));
     let file_path = index.get_file_path(file_id).unwrap();
     Ok(actix_files::NamedFile::open(file_path)?)
 }
@@ -153,8 +176,7 @@ impl From<FileMetadata> for FileData {
     }
 }
 
-fn all_files() -> Vec<FileData> {
-    let index = FileIndex::new(&PathBuf::from(SERVER_CONTENT));
+fn all_files(index: &FileIndex) -> Vec<FileData> {
     index.files().into_iter().map(|each| each.into()).collect()
 }
 
@@ -164,9 +186,10 @@ mod tests {
         fs::File,
         io::{Read, Write},
         path::PathBuf,
+        sync::Mutex,
     };
 
-    use crate::{create_and_run_server, index, post_file, Config, SERVER_CONTENT};
+    use crate::{create_and_run_server, index, post_file, Config, ServerState};
     use actix_web::{
         http::header::{self, ContentType, HeaderMap},
         test,
@@ -177,6 +200,7 @@ mod tests {
     use std::sync::Once;
 
     static INIT: Once = Once::new();
+    const SERVER_CONTENT: &str = "./content/index.json";
 
     #[tokio::test]
     async fn can_start_server() {
@@ -184,8 +208,9 @@ mod tests {
         tokio::spawn(async move {
             let config = Config {
                 address: Box::new(format!("localhost:{}", 5000)),
+                index_path: PathBuf::from("./content/index.json"),
             };
-            create_and_run_server(&config)
+            create_and_run_server(config)
                 .expect("expect server startup to succeed")
                 .await
                 .expect("expect sever running to succeed");
@@ -206,8 +231,15 @@ mod tests {
     #[actix_web::test]
     async fn can_upload_files() {
         initialize();
-        // TODO: send an actual file
-        let server = test::init_service(App::new().route("/file", web::post().to(post_file))).await;
+        // FIXME: chnage the test file index
+        let server = test::init_service(
+            App::new()
+                .app_data(actix_web::web::Data::new(ServerState {
+                    file_index: Mutex::new(FileIndex::new(&PathBuf::from(SERVER_CONTENT))),
+                }))
+                .route("/file", web::post().to(post_file)),
+        )
+        .await;
         let bytes = Bytes::from(
             "testasdadsad\r\n\
              --abbc761f78ff4d7cb7573b5a23f96ef0\r\n\
@@ -235,6 +267,7 @@ mod tests {
         let resp = test::call_service(&server, request).await;
         assert!(resp.status().is_success());
         let expected = [("f1.txt", "test"), ("f2.txt", "data")];
+        // TODO: change this
         let index = FileIndex::new(&PathBuf::from(SERVER_CONTENT));
         let indexed_files: Vec<String> = index.files().into_iter().map(|each| each.name).collect();
         for (file_name, content) in expected {
