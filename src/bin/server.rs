@@ -150,7 +150,8 @@ async fn get_file_by_type(
 ) -> actix_web::Result<actix_web::HttpResponse> {
     let file_type = path.into_inner();
     let index = state.file_index.lock().unwrap();
-    let body = serde_json::to_string(&index.files_of_type(file_type)).unwrap();
+    let files: Vec<FileData> = index.files_of_type(file_type).into_iter().map(|each| {each.into()}).collect();
+    let body = serde_json::to_string(&files).unwrap();
     Ok(actix_web::HttpResponse::Ok()
         .content_type("application/json")
         .body(body))
@@ -202,7 +203,7 @@ mod tests {
         sync::Mutex,
     };
 
-    use crate::{create_and_run_server, get_file_by_type, index, post_file, Config, ServerState};
+    use crate::{create_and_run_server, get_file_by_type, index, post_file, Config, ServerState, FileData};
     use actix_web::{
         http::header::{self, ContentType, HeaderMap},
         test,
@@ -329,14 +330,13 @@ mod tests {
         let request = test::TestRequest::get().uri("/files/txt").to_request();
         let response = test::call_service(&server, request).await;
         assert!(response.status().is_success());
-        let response_body: Vec<FileMetadata> = test::read_body_json(response).await;
+        let response_body: Vec<FileData> = test::read_body_json(response).await;
         assert_eq!(
             response_body,
-            vec![FileMetadata {
+            vec![FileData {
                 name: "1.txt".to_string(),
-                id: 1,
+                id: 1.to_string(),
                 ty: "txt".to_string(),
-                path: PathBuf::from("./dummy-file/1.txt"),
             },]
         );
         std::fs::remove_file(test_index_path).expect("expect cleaning test index file to succeed");
