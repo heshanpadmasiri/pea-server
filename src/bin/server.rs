@@ -7,9 +7,9 @@ use std::{
 };
 
 use futures_util::StreamExt as _;
+use log::{debug, info};
 use pea_server::utils::{
     get_local_ip_address,
-    log::{log_debug, log_normal, terminal_message},
     storage::{create_file, FileIndex, FileMetadata},
 };
 
@@ -24,6 +24,7 @@ struct ServerState {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    simple_logger::SimpleLogger::new().init().unwrap();
     let index_path = std::env::args()
         .nth(1)
         .or_else(|| Some("./content/index.json".to_string()))
@@ -34,9 +35,7 @@ async fn main() -> std::io::Result<()> {
             .nth(2)
             .unwrap_or_else(|| SocketAddr::from((get_local_ip_address(), 8080)).to_string()),
     );
-    log_normal(&format!(
-        "trying to run server on address: http://{address}"
-    ));
+    info!("trying to run server on address: http://{address}");
     let config = Config {
         address,
         index_path,
@@ -53,7 +52,7 @@ async fn main() -> std::io::Result<()> {
 }
 
 fn input_listener() -> crossterm::Result<()> {
-    terminal_message("Enter q to shutdown server");
+    println!("Enter q to shutdown server");
     loop {
         if crossterm::event::poll(Duration::from_millis(1000))? {
             if let crossterm::event::Event::Key(event) = crossterm::event::read()? {
@@ -66,15 +65,12 @@ fn input_listener() -> crossterm::Result<()> {
 }
 
 fn shutdown_server() {
-    log_debug("starting shutdown");
+    debug!("starting shutdown");
     std::process::exit(0);
 }
 
 fn create_and_run_server(config: Config) -> std::io::Result<actix_web::dev::Server> {
-    log_normal(&format!(
-        "starting server at: {:?}",
-        config.address.to_socket_addrs()
-    ));
+    info!("starting server at: {:?}", config.address.to_socket_addrs());
     let server_state = actix_web::web::Data::new(ServerState {
         file_index: Mutex::new(FileIndex::new(&config.index_path)),
     });

@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use pea_server::utils::storage::FileIndex;
 
 fn main() {
+    simple_logger::SimpleLogger::new().init().unwrap();
     let index_file = PathBuf::from(
         std::env::args()
             .nth(1)

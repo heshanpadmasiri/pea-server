@@ -1,4 +1,3 @@
-pub mod log;
 pub mod storage;
 
 pub fn get_local_ip_address() -> std::net::IpAddr {
