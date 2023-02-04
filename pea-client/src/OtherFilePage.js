@@ -2,13 +2,35 @@ import React from "react";
 import Container from "react-bootstrap/Container";
 import config from "./config.json";
 import navbar from "./navbar";
+import axios from "axios";
 
 class OtherFilePage extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      files: props.files,
+      files: [],
     };
+  }
+
+  componentDidMount() {
+    this.get_files();
+  }
+
+  get_files() {
+    const reserved_types = ["jpg", "jpeg", "mp4"]
+    axios
+      .get(`${config.SERVER_URL}/files`)
+      .then((res) => {
+        const files = res.data.filter(each => {
+          return reserved_types.indexOf(each.ty) === -1;
+        })
+        this.setState({
+          files
+        })
+      })
+      .catch((err) => {
+        console.error(err);
+      });
   }
 
   render() {
