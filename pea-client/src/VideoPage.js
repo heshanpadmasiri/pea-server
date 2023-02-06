@@ -1,4 +1,7 @@
 import Container from "react-bootstrap/Container";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import ListGroup from "react-bootstrap/ListGroup";
 import React from "react";
 import config from "./config.json";
 import navbar from "./navbar";
@@ -29,13 +32,12 @@ class VideoPage extends React.Component {
 
   render() {
     const { videos } = this.state;
-    console.log(videos);
     const videoTags = videos.map((each) => video_tag(each.name, each.id));
     const nav = navbar();
     return (
       <Container className="p-3">
         {nav}
-        {videoTags}
+        <ListGroup variant="flush">{videoTags}</ListGroup>
       </Container>
     );
   }
@@ -44,9 +46,20 @@ class VideoPage extends React.Component {
 function video_tag(filename, id) {
   const src = `${config.SERVER_URL}/content/${id}`;
   return (
-    <video key={id} controls>
-      <source src={src} type="video/mp4"></source>
-    </video>
+    <ListGroup.Item key={id}>
+      <Container>
+        <Row>
+          <Col sm={8}>
+            <video key={id} controls>
+              <source src={src} type="video/mp4"></source>
+            </video>
+          </Col>
+          <Col sm={4}>
+            <p>{filename}</p>
+          </Col>
+        </Row>
+      </Container>
+    </ListGroup.Item>
   );
 }
 
