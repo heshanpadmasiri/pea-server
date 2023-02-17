@@ -1,6 +1,5 @@
 import ballerina/http;
 import ballerina/log;
-import ballerina/io;
 import ballerinax/mongodb;
 
 public type Server record {|
@@ -9,27 +8,30 @@ public type Server record {|
     int port;
 |};
 service / on new http:Listener(9000) {
-    resource function post register (@http:Payload Server server) returns Server|error? {
-        log:printInfo("Registering server: " + server.id);
+    resource function post register (@http:Payload Server server) returns http:Ok|error? {
+        log:printInfo("Registering server: " + server.toString());
         error? result = registerServer(server);
         if result is error {
             log:printError("Error while registering server: " + result.message());
             return error("Error while registering server: " + result.message());
         }
-        return server;
+        log:printInfo("Successfully registered: " + server.id);
+        return http:OK;
     }
+}
+
+function registerServer(Server server) returns error? {
+    mongodb:Client mongoClient = check getMongoClient();
+    check mongoClient->insert(server, "servers");
+    mongoClient->close();
 }
 
 configurable string db_username = ?;
 configurable string db_password = ?;
 configurable string db_url = ?;
-function registerServer(Server server) returns error? {
+function getMongoClient() returns mongodb:Client|error {
     string url = string `mongodb+srv://${db_username}:${db_password}@${db_url}/?retryWrites=true&w=majority`;
     mongodb:ConnectionString connection = {url};
-    mongodb:ConnectionConfig config = {connection, databaseName: "pea-server-dev"};
-    mongodb:Client mongoClient = check new (config);
-    map<json> doc = { "name": "Gmail", "version": "0.99.1", "type" : "Service" };
-    // FIXME: why authentication is failing here?
-    check mongoClient->insert(doc, "testCollection");
-    mongoClient->close();
+    mongodb:ConnectionConfig config = {connection, databaseName: "servers"};
+    return check new (config);
 }
