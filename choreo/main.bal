@@ -15,12 +15,15 @@ service / on new http:Listener(9000) {
             log:printError(errorMessage);
             return error(errorMessage);
         }
-        error? result = registerServer(server);
-        if result is error {
-            log:printError("Error while registering server: " + result.message());
-            return error("Error while registering server: " + result.message());
-        }
+        check registerServer(server);
         log:printInfo("Successfully registered: " + server.id);
+        return http:OK;
+    }
+
+    resource function delete unregister(@http:Payload Server server) returns http:Ok|error? {
+        log:printInfo("Unregistering server: " + server.toString());
+        check unregisterServer(server);
+        log:printInfo("Successfully unregistered: " + server.id);
         return http:OK;
     }
 }
@@ -31,10 +34,22 @@ function registerServer(Server server) returns error? {
     mongoClient->close();
 }
 
+function unregisterServer(Server server) returns error? {
+    mongodb:Client mongoClient = check getMongoClient();
+    int count = check mongoClient->delete("servers", "servers", {id: server.id});
+    if count != 1 {
+        string errorMessage = string `Unexpected ${count} servers deleted for ${server.toString()}`;
+        log:printError(errorMessage);
+        return error(errorMessage);
+    }
+    mongoClient->close();
+}
+
 function findServer(string id) returns Server|error? {
     mongodb:Client mongoClient = check getMongoClient();
     var result = check mongoClient->find("servers", "servers", {id: id}, (), rowType = Server);
     var server = check result.next();
+    mongoClient->close();
     if server != () {
         return server.value;
     }
