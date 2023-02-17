@@ -1,6 +1,6 @@
 [package]
 org = "heshanpadmasiri"
-name = "redirect"
+name = "peaserver_register"
 version = "0.1.0"
 distribution = "2201.2.0"
 
