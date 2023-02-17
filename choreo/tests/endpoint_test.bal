@@ -55,6 +55,25 @@ function testServerNonExistingUnregRequests() returns error? {
     test:assertEquals(unreg_res.statusCode, 500, msg = "Allowed non existing server to unregister!");
 }
 
+@test:Config {}
+function testServerFindEndPoint() returns error? {
+    http:Client clientEndpoint = check new("http://localhost:9000");
+    Server server = {id: "search_id_1", address: "http://192.168.8.160", port: 8080 };
+    http:Response reg_res = checkpanic clientEndpoint->post("/register", server);
+    test:assertEquals(reg_res.statusCode, 200, msg = "Failed to register server!");
+
+    http:Response find_res = checkpanic clientEndpoint->get("/find/search_id_1");
+    test:assertEquals(find_res.statusCode, 200, msg = "Find query failed!");
+    test:assertEquals(find_res.getJsonPayload(), server, msg = "Invalid search result!");
+    return cleanup_registration(server);
+}
+@test:Config {}
+function testServerFindNonExisting() returns error? {
+    http:Client clientEndpoint = check new("http://localhost:9000");
+    http:Response find_res = checkpanic clientEndpoint->get("/find/non_existing");
+    test:assertEquals(find_res.statusCode, 202, msg = "Unexpected response code!");
+}
+
 function cleanup_registration(Server server) returns error? {
     http:Client clientEndpoint = check new("http://localhost:9000");
     http:Response _ = check clientEndpoint->delete("/unregister", server );

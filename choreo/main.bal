@@ -26,6 +26,11 @@ service / on new http:Listener(9000) {
         log:printInfo("Successfully unregistered: " + server.id);
         return http:OK;
     }
+
+    resource function get find/[string serverId]() returns Server|error? {
+        log:printInfo("Finding server: " + serverId);
+        return check findServer(serverId);
+    }
 }
 
 const string DATABASE = "servers";
@@ -48,13 +53,20 @@ function unregisterServer(Server server) returns error? {
     mongoClient->close();
 }
 
-function findServer(string id) returns Server|error? {
+type ServerQueryResultType record {
+    string id;
+    string address;
+    int port;
+};
+
+function findServer(string serverId) returns Server|error? {
     mongodb:Client mongoClient = check getMongoClient();
-    var result = check mongoClient->find(COLLECTION, DATABASE, filter={id: id}, rowType = Server);
+    var result = check mongoClient->find(COLLECTION, DATABASE, filter={id: serverId}, rowType = ServerQueryResultType);
     var server = check result.next();
     mongoClient->close();
     if server != () {
-        return server.value;
+        var { id, address, port } = server.value;
+        return {id: id, address: address, port: port};
     }
     return ();
 }
