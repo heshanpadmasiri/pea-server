@@ -28,6 +28,9 @@ service / on new http:Listener(9000) {
     }
 }
 
+const string DATABASE = "servers";
+const string COLLECTION = "servers";
+
 function registerServer(Server server) returns error? {
     mongodb:Client mongoClient = check getMongoClient();
     check mongoClient->insert(server, "servers");
@@ -36,7 +39,7 @@ function registerServer(Server server) returns error? {
 
 function unregisterServer(Server server) returns error? {
     mongodb:Client mongoClient = check getMongoClient();
-    int count = check mongoClient->delete("servers", "servers", {id: server.id});
+    int count = check mongoClient->delete(COLLECTION, DATABASE, {id: server.id});
     if count != 1 {
         string errorMessage = string `Unexpected ${count} servers deleted for ${server.toString()}`;
         log:printError(errorMessage);
@@ -47,7 +50,7 @@ function unregisterServer(Server server) returns error? {
 
 function findServer(string id) returns Server|error? {
     mongodb:Client mongoClient = check getMongoClient();
-    var result = check mongoClient->find("servers", "servers", {id: id}, (), rowType = Server);
+    var result = check mongoClient->find(COLLECTION, DATABASE, filter={id: id}, rowType = Server);
     var server = check result.next();
     mongoClient->close();
     if server != () {
