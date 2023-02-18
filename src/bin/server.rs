@@ -39,7 +39,6 @@ async fn main() -> std::io::Result<()> {
     );
     info!("trying to run server on address: http://{address}");
     let id = uuid::Uuid::new_v4();
-    // TODO: read this from a config file
     let config = Config {
         address,
         index_path,
