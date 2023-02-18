@@ -16,11 +16,27 @@ fn get_registry_config() -> RegistryConfig {
     serde_json::from_str(&config).unwrap()
 }
 
-pub fn register_server(server: RegistryData) -> Result<(), Box<dyn std::error::Error>> {
+pub fn register_server(server: &RegistryData) -> Result<(), Box<dyn std::error::Error>> {
     let config = get_registry_config();
     let client = reqwest::blocking::Client::new();
-    let res = client.post(&config.url)
-        .header("Authorization", &config.auth)
+    let res = client.post(format!("{}/register", config.url))
+        .header("API-Key", &config.auth)
+        .header("Content-Type", "application/json")
+        .json(&server)
+        .send()?;
+    if res.status().is_success() {
+        Ok(())
+    } else {
+        Err(Box::new(std::io::Error::new(std::io::ErrorKind::Other, "failed to register server")))
+    }
+}
+
+pub fn unregister_server(server: RegistryData) -> Result<(), Box<dyn std::error::Error>> {
+    let config = get_registry_config();
+    let client = reqwest::blocking::Client::new();
+    let res = client.delete(format!("{}/unregister", config.url))
+        .header("API-Key", &config.auth)
+        .header("Content-Type", "application/json")
         .json(&server)
         .send()?;
     if res.status().is_success() {

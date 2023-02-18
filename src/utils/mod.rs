@@ -1,5 +1,5 @@
-pub mod storage;
 pub mod registry;
+pub mod storage;
 
 pub fn get_local_ip_address() -> std::net::IpAddr {
     match local_ip_address::local_ip() {
@@ -32,7 +32,7 @@ mod tests {
         storage::{clean_up_dir, FileMetadata},
     };
 
-    use super::storage::FileIndex;
+    use super::{registry::{RegistryData, register_server, unregister_server}, storage::FileIndex};
     #[test]
     fn test_get_local_ip() {
         let ip = get_local_ip_address();
@@ -97,6 +97,18 @@ mod tests {
         let metadata = index.files();
         assert_eq!(metadata, []);
         cleanup_storage(index_path, test_storage);
+    }
+
+    #[test]
+    fn test_registering_service() {
+        let server = RegistryData {
+            id: "67e55044-10b1-426f-9247-bb680e5fe0c8".to_string(),
+            address: "http://192.168.8.168".to_string(),
+            port: 8080,
+        };
+        register_server(&server).expect("expect registering server to succeed");
+
+        unregister_server(server).expect("expect unregistering server to succeed");
     }
 
     fn index_for_dir(index_path: &Path, dir: &Path) -> FileIndex {
