@@ -32,7 +32,10 @@ mod tests {
         storage::{clean_up_dir, FileMetadata},
     };
 
-    use super::{registry::{RegistryData, register_server, unregister_server}, storage::FileIndex};
+    use super::{
+        registry::{register_server, unregister_server, RegistryData},
+        storage::FileIndex,
+    };
     #[test]
     fn test_get_local_ip() {
         let ip = get_local_ip_address();

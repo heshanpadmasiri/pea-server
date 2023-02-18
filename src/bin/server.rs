@@ -10,14 +10,14 @@ use futures_util::StreamExt as _;
 use log::{debug, info};
 use pea_server::utils::{
     get_local_ip_address,
-    storage::{create_file, FileIndex, FileMetadata}, registry::RegistryData,
+    registry::{register_server, unregister_server, RegistryData},
+    storage::{create_file, FileIndex, FileMetadata},
 };
 
 struct Config {
     id: uuid::Uuid,
     address: Box<dyn net::ToSocketAddrs<Iter = IntoIter<SocketAddr>> + Send + Sync>,
     index_path: PathBuf,
-    registry: String
 }
 
 struct ServerState {
@@ -40,39 +40,42 @@ async fn main() -> std::io::Result<()> {
     info!("trying to run server on address: http://{address}");
     let id = uuid::Uuid::new_v4();
     // TODO: read this from a config file
-    let registry = "https://c1a56103-7250-419c-8033-e51d4ebb6cb7-dev.e1-us-east-azure.choreoapis.dev/zlkb/redirection-service/1.0.0".to_owned();
     let config = Config {
         address,
         index_path,
         id,
-        registry
     };
-    register_server(&config).await;
+    let register_data = RegistryData::from(&config);
     tokio::spawn(async move {
-        // generate_static_content(&config).expect("generating static content should not fail");
         create_and_run_server(config)
             .expect("server creation should not fail")
             .await
             .expect("server running should not fail");
     });
-    input_listener().expect("expect input listener not to fail");
+    register_server(&register_data).expect("expect server registration to succeed");
+    input_listener(register_data);
     Ok(())
 }
 
-fn input_listener() -> crossterm::Result<()> {
+fn input_listener(registry_data: RegistryData) {
     println!("Enter q to shutdown server");
     loop {
-        if crossterm::event::poll(Duration::from_millis(1000))? {
-            if let crossterm::event::Event::Key(event) = crossterm::event::read()? {
+        if crossterm::event::poll(Duration::from_millis(1000)).expect("polling should not fail") {
+            if let crossterm::event::Event::Key(event) =
+                crossterm::event::read().expect("reading key event should not fail")
+            {
                 if event.code == crossterm::event::KeyCode::Char('q') {
-                    shutdown_server();
+                    break;
                 }
             }
         }
     }
+    shutdown_server(registry_data);
 }
 
-fn shutdown_server() {
+fn shutdown_server(server: RegistryData) {
+    debug!("unregistering server");
+    unregister_server(server).expect("unregistering server should not fail");
     debug!("starting shutdown");
     std::process::exit(0);
 }
@@ -109,15 +112,9 @@ impl From<&Config> for RegistryData {
         Self {
             id: config.id.to_string(),
             address: address.ip().to_string(),
-            port: address.port() as u64
+            port: address.port() as u64,
         }
     }
-}
-
-async fn register_server(config: &Config) {
-    let data = RegistryData::from(config);
-    let response = reqwest::Client::new().post(format!("{}/register", config.registry)).json(&data).send().await.expect("expect server registration to succeed");
-    info!("server registration response {:?}", response);
 }
 
 async fn index(_req: actix_web::HttpRequest) -> actix_web::Result<actix_files::NamedFile> {
@@ -249,7 +246,6 @@ mod tests {
         tokio::spawn(async move {
             let config = Config {
                 id: uuid::Uuid::new_v4(),
-                registry: "non-existing".to_string(),
                 address: Box::new(format!("localhost:{}", 5000)),
                 index_path: PathBuf::from("./content/index.json"),
             };
