@@ -10,12 +10,14 @@ use futures_util::StreamExt as _;
 use log::{debug, info};
 use pea_server::utils::{
     get_local_ip_address,
-    storage::{create_file, FileIndex, FileMetadata},
+    storage::{create_file, FileIndex, FileMetadata}, registry::RegistryData,
 };
 
 struct Config {
+    id: uuid::Uuid,
     address: Box<dyn net::ToSocketAddrs<Iter = IntoIter<SocketAddr>> + Send + Sync>,
     index_path: PathBuf,
+    registry: String
 }
 
 struct ServerState {
@@ -36,10 +38,16 @@ async fn main() -> std::io::Result<()> {
             .unwrap_or_else(|| SocketAddr::from((get_local_ip_address(), 8080)).to_string()),
     );
     info!("trying to run server on address: http://{address}");
+    let id = uuid::Uuid::new_v4();
+    // TODO: read this from a config file
+    let registry = "https://c1a56103-7250-419c-8033-e51d4ebb6cb7-dev.e1-us-east-azure.choreoapis.dev/zlkb/redirection-service/1.0.0".to_owned();
     let config = Config {
         address,
         index_path,
+        id,
+        registry
     };
+    register_server(&config).await;
     tokio::spawn(async move {
         // generate_static_content(&config).expect("generating static content should not fail");
         create_and_run_server(config)
@@ -93,6 +101,23 @@ fn create_and_run_server(config: Config) -> std::io::Result<actix_web::dev::Serv
     })
     .bind(config.address.as_ref())?;
     Ok(server.run())
+}
+
+impl From<&Config> for RegistryData {
+    fn from(config: &Config) -> Self {
+        let address = config.address.to_socket_addrs().unwrap().next().unwrap();
+        Self {
+            id: config.id.to_string(),
+            address: address.ip().to_string(),
+            port: address.port() as u64
+        }
+    }
+}
+
+async fn register_server(config: &Config) {
+    let data = RegistryData::from(config);
+    let response = reqwest::Client::new().post(format!("{}/register", config.registry)).json(&data).send().await.expect("expect server registration to succeed");
+    info!("server registration response {:?}", response);
 }
 
 async fn index(_req: actix_web::HttpRequest) -> actix_web::Result<actix_files::NamedFile> {
@@ -223,6 +248,8 @@ mod tests {
         initialize();
         tokio::spawn(async move {
             let config = Config {
+                id: uuid::Uuid::new_v4(),
+                registry: "non-existing".to_string(),
                 address: Box::new(format!("localhost:{}", 5000)),
                 index_path: PathBuf::from("./content/index.json"),
             };

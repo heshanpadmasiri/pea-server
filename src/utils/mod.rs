@@ -1,4 +1,5 @@
 pub mod storage;
+pub mod registry;
 
 pub fn get_local_ip_address() -> std::net::IpAddr {
     match local_ip_address::local_ip() {
