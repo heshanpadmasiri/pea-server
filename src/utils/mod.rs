@@ -20,11 +20,16 @@ pub fn get_local_ip_address() -> std::net::IpAddr {
 #[cfg(test)]
 mod tests {
     use std::{
-        fs::{remove_dir_all, File, self},
-        path::{Path, PathBuf}, collections::hash_map::DefaultHasher, hash::{Hash, Hasher},
+        collections::hash_map::DefaultHasher,
+        fs::{self, remove_dir_all, File},
+        hash::{Hash, Hasher},
+        path::{Path, PathBuf},
     };
 
-    use crate::utils::{get_local_ip_address, storage::{clean_up_dir, FileMetadata}};
+    use crate::utils::{
+        get_local_ip_address,
+        storage::{clean_up_dir, FileMetadata},
+    };
 
     use super::storage::FileIndex;
     #[test]
