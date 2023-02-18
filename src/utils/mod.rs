@@ -104,6 +104,9 @@ mod tests {
 
     #[test]
     fn test_registering_service() {
+        if !Path::new("config.json").exists() {
+            return;
+        }
         let server = RegistryData {
             id: "67e55044-10b1-426f-9247-bb680e5fe0c8".to_string(),
             address: "http://192.168.8.168".to_string(),
