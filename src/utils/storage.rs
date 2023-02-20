@@ -84,6 +84,24 @@ impl FileIndex {
             .collect()
     }
 
+    pub fn files_of_tag(&self, tags: &Vec<String>) -> Vec<FileMetadata> {
+        self.db
+            .values()
+            .filter(|each| match &each.tags {
+                None => false,
+                Some(each_tags) => {
+                    for each in tags {
+                        if !each_tags.contains(each) {
+                            return false;
+                        }
+                    }
+                    true
+                }
+            })
+            .cloned()
+            .collect()
+    }
+
     pub fn get_file_path(&self, id: u64) -> Result<PathBuf, FileErr> {
         match self.db.get(&id) {
             Some(metadata) => Ok(metadata.path.clone()),

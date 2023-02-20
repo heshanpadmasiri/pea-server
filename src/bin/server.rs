@@ -94,6 +94,7 @@ fn create_and_run_server(config: Config) -> std::io::Result<actix_web::dev::Serv
             .route("/tags", actix_web::web::get().to(get_tags))
             .route("/file", actix_web::web::post().to(post_file))
             .route("/files/{type}", actix_web::web::get().to(get_file_by_type))
+            .route("/query", actix_web::web::get().to(get_files_by_tags))
             .service(
                 actix_web::web::resource("/content/{file_name}")
                     .route(actix_web::web::get().to(get_content)),
@@ -137,6 +138,35 @@ async fn get_tags(state: State) -> actix_web::HttpResponse {
     let index = state.file_index.lock().unwrap();
     let tags = index.tags();
     let body = serde_json::to_string(&tags).unwrap();
+    actix_web::HttpResponse::Ok()
+        .content_type("application/json")
+        .body(body)
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
+pub struct TagQuery {
+    // if ty is "" then it is ignored
+    ty: String,
+    tags: Vec<String>,
+}
+
+// TODO: add endpoint
+async fn get_files_by_tags(
+    query: actix_web::web::Json<TagQuery>,
+    state: State,
+) -> actix_web::HttpResponse {
+    let index = state.file_index.lock().unwrap();
+    let files = if query.ty.is_empty() {
+        index.files_of_tag(&query.tags)
+    } else {
+        index
+            .files_of_tag(&query.tags)
+            .into_iter()
+            .filter(|file| file.ty == query.ty)
+            .collect()
+    };
+    let file_data: Vec<FileData> = files.into_iter().map(FileData::from).collect();
+    let body = serde_json::to_string(&file_data).unwrap();
     actix_web::HttpResponse::Ok()
         .content_type("application/json")
         .body(body)
@@ -241,8 +271,8 @@ mod tests {
     };
 
     use crate::{
-        create_and_run_server, get_file_by_type, get_tags, index, post_file, Config, FileData,
-        ServerState,
+        create_and_run_server, get_file_by_type, get_files_by_tags, get_tags, index, post_file,
+        Config, FileData, ServerState, TagQuery,
     };
     use actix_web::{
         http::header::{self, ContentType, HeaderMap},
@@ -322,7 +352,6 @@ mod tests {
         let resp = test::call_service(&server, request).await;
         assert!(resp.status().is_success());
         let expected = [("f1.txt", "test"), ("f2.txt", "data")];
-        // TODO: change this
         let index = FileIndex::new(&PathBuf::from(SERVER_CONTENT));
         let indexed_files: Vec<String> = index.files().into_iter().map(|each| each.name).collect();
         for (file_name, content) in expected {
@@ -432,6 +461,91 @@ mod tests {
             "tag4".to_string(),
         ];
         assert_eq!(response_body, expected);
+        std::fs::remove_file(test_index_path).expect("expect cleaning test index file to succeed");
+    }
+
+    #[actix_web::test]
+    async fn can_query_files_by_tags() {
+        initialize();
+        let test_index_path = PathBuf::from("./query_files_with_tags.json");
+        let files = vec![
+            FileMetadata {
+                name: "1.txt".to_string(),
+                id: 1,
+                ty: "txt".to_string(),
+                path: PathBuf::from("./dummy-file/1.txt"),
+                tags: Some(vec!["tag1".to_string(), "tag2".to_string()]),
+            },
+            FileMetadata {
+                name: "2.mp4".to_string(),
+                id: 2,
+                ty: "mp4".to_string(),
+                path: PathBuf::from("./dummy-file/2.mp4"),
+                tags: Some(vec![
+                    "tag1".to_string(),
+                    "tag2".to_string(),
+                    "tag3".to_string(),
+                    "tag4".to_string(),
+                ]),
+            },
+            FileMetadata {
+                name: "3.mp4".to_string(),
+                id: 3,
+                ty: "mp4".to_string(),
+                path: PathBuf::from("./dummy-file/2.mp4"),
+                tags: Some(vec!["tag1".to_string()]),
+            },
+        ];
+        let body = serde_json::to_string_pretty(&files).unwrap();
+        std::fs::write(&test_index_path, body).expect("expect creating index file to succeed");
+
+        let server = test::init_service(
+            App::new()
+                .app_data(actix_web::web::Data::new(ServerState {
+                    file_index: Mutex::new(FileIndex::new(&test_index_path)),
+                }))
+                .route("/query", web::get().to(get_files_by_tags)),
+        )
+        .await;
+
+        let query = TagQuery {
+            ty: "mp4".to_string(),
+            tags: vec!["tag1".to_string(), "tag2".to_string()],
+        };
+        let request = test::TestRequest::get()
+            .uri("/query")
+            .set_json(query)
+            .to_request();
+        let response = test::call_service(&server, request).await;
+        assert!(response.status().is_success());
+        let response_body: Vec<FileData> = test::read_body_json(response).await;
+        let mut res_files = response_body
+            .into_iter()
+            .map(|each| each.name)
+            .collect::<Vec<String>>();
+        res_files.sort();
+        let expected = vec!["2.mp4".to_string()];
+        assert_eq!(res_files, expected);
+
+        let query = TagQuery {
+            ty: "".to_string(),
+            tags: vec!["tag1".to_string(), "tag2".to_string()],
+        };
+        let request = test::TestRequest::get()
+            .uri("/query")
+            .set_json(query)
+            .to_request();
+        let response = test::call_service(&server, request).await;
+        assert!(response.status().is_success());
+        let response_body: Vec<FileData> = test::read_body_json(response).await;
+        let mut res_files = response_body
+            .into_iter()
+            .map(|each| each.name)
+            .collect::<Vec<String>>();
+        res_files.sort();
+        let expected = vec!["1.txt".to_string(), "2.mp4".to_string()];
+        assert_eq!(res_files, expected);
+
         std::fs::remove_file(test_index_path).expect("expect cleaning test index file to succeed");
     }
     // every test properly creating the content dir
