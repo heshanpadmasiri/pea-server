@@ -45,7 +45,11 @@ async fn main() -> std::io::Result<()> {
         index_path,
         id,
     };
-    let register_data = if discovery_enable { Some(RegistryData::from(&config)) } else { None };
+    let register_data = if discovery_enable {
+        Some(RegistryData::from(&config))
+    } else {
+        None
+    };
     tokio::spawn(async move {
         create_and_run_server(config)
             .expect("server creation should not fail")
