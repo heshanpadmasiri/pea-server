@@ -103,7 +103,7 @@ fn create_and_run_server(config: Config) -> std::io::Result<actix_web::dev::Serv
             .route("/tags", actix_web::web::get().to(get_tags))
             .route("/file", actix_web::web::post().to(post_file))
             .route("/files/{type}", actix_web::web::get().to(get_file_by_type))
-            .route("/query", actix_web::web::get().to(get_files_by_tags))
+            .route("/query", actix_web::web::post().to(get_files_by_tags))
             .service(
                 actix_web::web::resource("/content/{file_name}")
                     .route(actix_web::web::get().to(get_content)),
@@ -159,7 +159,6 @@ pub struct TagQuery {
     tags: Vec<String>,
 }
 
-// TODO: add endpoint
 async fn get_files_by_tags(
     query: actix_web::web::Json<TagQuery>,
     state: State,
@@ -513,7 +512,7 @@ mod tests {
                 .app_data(actix_web::web::Data::new(ServerState {
                     file_index: Mutex::new(FileIndex::new(&test_index_path)),
                 }))
-                .route("/query", web::get().to(get_files_by_tags)),
+                .route("/query", web::post().to(get_files_by_tags)),
         )
         .await;
 
@@ -521,7 +520,7 @@ mod tests {
             ty: "mp4".to_string(),
             tags: vec!["tag1".to_string(), "tag2".to_string()],
         };
-        let request = test::TestRequest::get()
+        let request = test::TestRequest::post()
             .uri("/query")
             .set_json(query)
             .to_request();
@@ -540,7 +539,7 @@ mod tests {
             ty: "".to_string(),
             tags: vec!["tag1".to_string(), "tag2".to_string()],
         };
-        let request = test::TestRequest::get()
+        let request = test::TestRequest::post()
             .uri("/query")
             .set_json(query)
             .to_request();
