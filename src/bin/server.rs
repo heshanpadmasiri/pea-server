@@ -322,7 +322,6 @@ mod tests {
         let resp = test::call_service(&server, request).await;
         assert!(resp.status().is_success());
         let expected = [("f1.txt", "test"), ("f2.txt", "data")];
-        // TODO: change this
         let index = FileIndex::new(&PathBuf::from(SERVER_CONTENT));
         let indexed_files: Vec<String> = index.files().into_iter().map(|each| each.name).collect();
         for (file_name, content) in expected {
