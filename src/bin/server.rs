@@ -333,12 +333,14 @@ mod tests {
                 id: 1,
                 ty: "txt".to_string(),
                 path: PathBuf::from("./dummy-file/1.txt"),
+                tags: vec![]
             },
             FileMetadata {
                 name: "2.mp4".to_string(),
                 id: 2,
                 ty: "mp4".to_string(),
                 path: PathBuf::from("./dummy-file/2.mp4"),
+                tags: vec![]
             },
         ];
         let body = serde_json::to_string_pretty(&files).unwrap();

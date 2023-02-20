@@ -14,6 +14,7 @@ pub struct FileMetadata {
     pub id: u64,
     pub ty: String,
     pub path: PathBuf,
+    pub tags: Vec<String>
 }
 
 #[derive(Debug)]
@@ -220,11 +221,14 @@ fn file_metadata(path: &Path) -> FileMetadata {
         .to_str()
         .expect("expect properly formatted extension")
         .to_string();
+    // TODO: add tags
+    let tags = vec![];
     FileMetadata {
         name,
         id,
         ty,
         path: path.to_path_buf(),
+        tags
     }
 }
 

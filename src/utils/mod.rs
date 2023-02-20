@@ -81,6 +81,7 @@ mod tests {
                     id,
                     ty: ty.to_string(),
                     path,
+                    tags: vec![],
                 }
             })
             .collect();
