@@ -14,17 +14,21 @@ class ImagePage extends React.Component {
       images: [],
       tags: [],
       selected_tags: [],
+      loading: true
     };
   }
 
   componentDidMount() {
-    this.get_images();
     this.get_tags();
+    this.get_images();
   }
 
 
   get_images() {
     const { selected_tags } = this.state;
+    this.setState({
+      loading: true
+    });
     if (selected_tags.length === 0) {
       this.get_images_without_tags();
     } else {
@@ -44,7 +48,8 @@ class ImagePage extends React.Component {
       return res.data
     })).then(image_array => {
       this.setState({
-        images: image_array.flat()
+        images: image_array.flat(),
+        loading: false
       })
     })
   }
@@ -56,7 +61,8 @@ class ImagePage extends React.Component {
       return res.data
     })).then(image_array => {
       this.setState({
-        images: image_array.flat()
+        images: image_array.flat(),
+        loading: false
       })
     })
   }
@@ -69,7 +75,7 @@ class ImagePage extends React.Component {
     });
   }
 
-  get_tag_switches() {
+  tag_switches() {
     const { tags, selected_tags } = this.state;
     return tags.map((tag, id) => {
       return (
@@ -98,21 +104,32 @@ class ImagePage extends React.Component {
     });
   }
 
+  image_gallery() {
+    console.log(this.state);
+    const { images, loading } = this.state;
+    if (loading) {
+      return (<div>Loading...</div>)
+    }
+    else {
+      const items = images.map((each) => {
+        return { original: `${config.SERVER_URL}/content/${each.id}` };
+      });
+      console.log("items", items);
+      return (<ImageGallery items={items} infinite={true} />)
+    }
+  }
+
   render() {
     const { images } = this.state;
-    const items = images.map((each) => {
-      return { original: `${config.SERVER_URL}/content/${each.id}` };
-    });
     const nav = navbar();
-    const tag_switches = this.get_tag_switches();
+    const tag_switches = this.tag_switches();
+    const image_gallery = this.image_gallery();
     return (
       <Container className="p-3">
         {nav}
         <Row>
           <Col sm={2}>{tag_switches}</Col>
-          <Col sm={10}>
-            <ImageGallery items={items} infinite={true} />
-          </Col>
+          <Col sm={10}>{image_gallery}</Col>
         </Row>
       </Container>
     );
