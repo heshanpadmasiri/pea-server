@@ -14,7 +14,7 @@ pub struct FileMetadata {
     pub id: u64,
     pub ty: String,
     pub path: PathBuf,
-    pub tags: Option<Vec<String>>
+    pub tags: Option<Vec<String>>,
 }
 
 #[derive(Debug)]
@@ -197,13 +197,17 @@ fn files_in_dir(path: &Path, tags: Option<Vec<String>>) -> Result<Vec<FileMetada
         .map(|each| each.path())
     {
         if child_path.is_dir() {
-            let new_tag = child_path.file_name().unwrap().to_string_lossy().to_string();
+            let new_tag = child_path
+                .file_name()
+                .unwrap()
+                .to_string_lossy()
+                .to_string();
             let new_tags = match &tags {
                 Some(tags) => {
                     let mut buffer = tags.clone();
                     buffer.push(new_tag);
                     Some(buffer)
-                },
+                }
                 None => Some(vec![new_tag]),
             };
             metadata.extend(files_in_dir(&child_path, new_tags)?);
@@ -235,7 +239,7 @@ fn file_metadata(path: &Path, tags: Option<Vec<String>>) -> FileMetadata {
         id,
         ty,
         path: path.to_path_buf(),
-        tags
+        tags,
     }
 }
 
