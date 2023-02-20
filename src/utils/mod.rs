@@ -21,7 +21,7 @@ pub fn get_local_ip_address() -> std::net::IpAddr {
 #[cfg(test)]
 mod tests {
     use std::{
-        collections::hash_map::DefaultHasher,
+        collections::{hash_map::DefaultHasher, HashMap},
         fs::{self, remove_dir_all, File},
         hash::{Hash, Hasher},
         path::{Path, PathBuf},
@@ -81,6 +81,7 @@ mod tests {
                     id,
                     ty: ty.to_string(),
                     path,
+                    tags: None,
                 }
             })
             .collect();
@@ -103,6 +104,39 @@ mod tests {
     }
 
     #[test]
+    fn test_file_tagging() {
+        let test_storage = &PathBuf::from("./libtest_4");
+        let index_path = &PathBuf::from("./libtest_4.index");
+        let file_tags = vec![
+            ("./libtest_4/1.mp4", None),
+            ("./libtest_4/a/2.mp4", Some(vec!["a".to_string()])),
+            (
+                "./libtest_4/a/b/3.mp4",
+                Some(vec!["a".to_string(), "b".to_string()]),
+            ),
+            (
+                "./libtest_4/c/b/4.mp4",
+                Some(vec!["c".to_string(), "b".to_string()]),
+            ),
+        ];
+        let expected_tags: HashMap<PathBuf, Option<Vec<String>>> = file_tags
+            .iter()
+            .map(|(path, tags)| {
+                create_nested_file(Path::new(path));
+                (PathBuf::from(path), tags.clone())
+            })
+            .collect();
+        let file_index = index_for_dir(index_path, test_storage);
+        file_index.files().iter().for_each(|file| {
+            let tags = &file.tags;
+            let expected = expected_tags.get(&file.path).unwrap();
+            assert_eq!(tags, expected);
+        });
+        assert!(file_index.files().len() == expected_tags.len());
+        cleanup_storage(index_path, test_storage);
+    }
+
+    #[test]
     fn test_registering_service() {
         if !Path::new("config.json").exists() {
             return;
@@ -115,6 +149,12 @@ mod tests {
         register_server(&server).expect("expect registering server to succeed");
 
         unregister_server(server).expect("expect unregistering server to succeed");
+    }
+
+    fn create_nested_file(path: &Path) {
+        let prefix = path.parent().unwrap();
+        std::fs::create_dir_all(prefix).unwrap();
+        File::create(path).unwrap();
     }
 
     fn index_for_dir(index_path: &Path, dir: &Path) -> FileIndex {

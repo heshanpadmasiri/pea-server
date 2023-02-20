@@ -199,14 +199,20 @@ struct FileData {
     name: String,
     id: String,
     ty: String,
+    tags: Vec<String>,
 }
 
 impl From<FileMetadata> for FileData {
     fn from(value: FileMetadata) -> Self {
+        let tags = match value.tags {
+            Some(tags) => tags,
+            None => Vec::new(),
+        };
         Self {
             name: value.name,
             id: value.id.to_string(),
             ty: value.ty,
+            tags,
         }
     }
 }
@@ -333,12 +339,14 @@ mod tests {
                 id: 1,
                 ty: "txt".to_string(),
                 path: PathBuf::from("./dummy-file/1.txt"),
+                tags: None,
             },
             FileMetadata {
                 name: "2.mp4".to_string(),
                 id: 2,
                 ty: "mp4".to_string(),
                 path: PathBuf::from("./dummy-file/2.mp4"),
+                tags: None,
             },
         ];
         let body = serde_json::to_string_pretty(&files).unwrap();
@@ -361,6 +369,7 @@ mod tests {
                 name: "1.txt".to_string(),
                 id: 1.to_string(),
                 ty: "txt".to_string(),
+                tags: vec![]
             },]
         );
         std::fs::remove_file(test_index_path).expect("expect cleaning test index file to succeed");
