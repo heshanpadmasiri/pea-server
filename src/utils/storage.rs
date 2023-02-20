@@ -87,19 +87,16 @@ impl FileIndex {
     pub fn files_of_tag(&self, tags: &Vec<String>) -> Vec<FileMetadata> {
         self.db
             .values()
-            .filter(|each| {
-                match &each.tags {
-                    None => false,
-                    Some(each_tags) => {
-                        for each in tags {
-                            if !each_tags.contains(each) {
-                                return false;
-                            }
+            .filter(|each| match &each.tags {
+                None => false,
+                Some(each_tags) => {
+                    for each in tags {
+                        if !each_tags.contains(each) {
+                            return false;
                         }
-                        true
                     }
+                    true
                 }
-
             })
             .cloned()
             .collect()

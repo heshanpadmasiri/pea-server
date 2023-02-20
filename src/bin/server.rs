@@ -156,7 +156,7 @@ async fn get_files_by_tags(
     state: State,
 ) -> actix_web::HttpResponse {
     let index = state.file_index.lock().unwrap();
-    let files = if query.ty == "" {
+    let files = if query.ty.is_empty() {
         index.files_of_tag(&query.tags)
     } else {
         index

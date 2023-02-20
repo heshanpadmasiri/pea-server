@@ -186,7 +186,10 @@ mod tests {
             .map(|file| file.name.clone())
             .collect::<Vec<String>>();
         res_2_names.sort_unstable();
-        assert_eq!(res_2_names, vec![String::from("3.mp4"), String::from("4.mp4")]);
+        assert_eq!(
+            res_2_names,
+            vec![String::from("3.mp4"), String::from("4.mp4")]
+        );
 
         cleanup_storage(index_path, test_storage);
     }
