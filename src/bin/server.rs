@@ -153,10 +153,15 @@ async fn get_tags(state: State) -> actix_web::HttpResponse {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
-pub struct TagQuery {
+pub struct TagQueryData {
     // if ty is "" then it is ignored
     ty: String,
     tags: Vec<String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
+pub struct TagQuery {
+    data: TagQueryData,
 }
 
 async fn get_files_by_tags(
@@ -164,13 +169,14 @@ async fn get_files_by_tags(
     state: State,
 ) -> actix_web::HttpResponse {
     let index = state.file_index.lock().unwrap();
-    let files = if query.ty.is_empty() {
-        index.files_of_tag(&query.tags)
+    let data = &query.data;
+    let files = if data.ty.is_empty() {
+        index.files_of_tag(&data.tags)
     } else {
         index
-            .files_of_tag(&query.tags)
+            .files_of_tag(&data.tags)
             .into_iter()
-            .filter(|file| file.ty == query.ty)
+            .filter(|file| file.ty == data.ty)
             .collect()
     };
     let file_data: Vec<FileData> = files.into_iter().map(FileData::from).collect();
@@ -280,7 +286,7 @@ mod tests {
 
     use crate::{
         create_and_run_server, get_file_by_type, get_files_by_tags, get_tags, index, post_file,
-        Config, FileData, ServerState, TagQuery,
+        Config, FileData, ServerState, TagQuery, TagQueryData,
     };
     use actix_web::{
         http::header::{self, ContentType, HeaderMap},
@@ -517,8 +523,10 @@ mod tests {
         .await;
 
         let query = TagQuery {
-            ty: "mp4".to_string(),
-            tags: vec!["tag1".to_string(), "tag2".to_string()],
+            data: TagQueryData {
+                ty: "mp4".to_string(),
+                tags: vec!["tag1".to_string(), "tag2".to_string()],
+            },
         };
         let request = test::TestRequest::post()
             .uri("/query")
@@ -536,8 +544,10 @@ mod tests {
         assert_eq!(res_files, expected);
 
         let query = TagQuery {
-            ty: "".to_string(),
-            tags: vec!["tag1".to_string(), "tag2".to_string()],
+            data: TagQueryData {
+                ty: "".to_string(),
+                tags: vec!["tag1".to_string(), "tag2".to_string()],
+            },
         };
         let request = test::TestRequest::post()
             .uri("/query")
