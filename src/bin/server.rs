@@ -27,6 +27,7 @@ struct ServerState {
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     simple_logger::SimpleLogger::new().init().unwrap();
+    let discovery_enable = std::env::args().any(|each| each == "--discovery");
     let index_path = std::env::args()
         .nth(1)
         .or_else(|| Some("./content/index.json".to_string()))
@@ -44,19 +45,21 @@ async fn main() -> std::io::Result<()> {
         index_path,
         id,
     };
-    let register_data = RegistryData::from(&config);
+    let register_data = if discovery_enable { Some(RegistryData::from(&config)) } else { None };
     tokio::spawn(async move {
         create_and_run_server(config)
             .expect("server creation should not fail")
             .await
             .expect("server running should not fail");
     });
-    register_server(&register_data).expect("expect server registration to succeed");
+    if let Some(server) = &register_data {
+        register_server(&server).expect("expect server registration to succeed");
+    }
     input_listener(register_data);
     Ok(())
 }
 
-fn input_listener(registry_data: RegistryData) {
+fn input_listener(registry_data: Option<RegistryData>) {
     println!("Enter q to shutdown server");
     loop {
         if crossterm::event::poll(Duration::from_millis(1000)).expect("polling should not fail") {
@@ -72,9 +75,11 @@ fn input_listener(registry_data: RegistryData) {
     shutdown_server(registry_data);
 }
 
-fn shutdown_server(server: RegistryData) {
+fn shutdown_server(server: Option<RegistryData>) {
     debug!("unregistering server");
-    unregister_server(server).expect("unregistering server should not fail");
+    if let Some(server) = server {
+        unregister_server(server).expect("unregistering server should not fail");
+    }
     debug!("starting shutdown");
     std::process::exit(0);
 }
