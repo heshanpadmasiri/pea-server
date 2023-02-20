@@ -137,6 +137,27 @@ mod tests {
     }
 
     #[test]
+    fn test_tags() {
+        let test_storage = &PathBuf::from("./libtest_5");
+        let index_path = &PathBuf::from("./libtest_5.index");
+        let file_tags = vec![
+            "./libtest_5/1.mp4",
+            "./libtest_5/a/2.mp4",
+            "./libtest_5/a/b/3.mp4",
+            "./libtest_5/c/b/4.mp4",
+        ];
+        for each in file_tags {
+            create_nested_file(Path::new(each));
+        }
+        let file_index = index_for_dir(index_path, test_storage);
+        let mut sorted_tags = file_index.tags();
+        sorted_tags.sort_unstable();
+        let expected = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        assert_eq!(sorted_tags, expected);
+        cleanup_storage(index_path, test_storage);
+    }
+
+    #[test]
     fn test_registering_service() {
         if !Path::new("config.json").exists() {
             return;

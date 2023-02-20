@@ -65,6 +65,21 @@ impl FileIndex {
     pub fn files(&self) -> Vec<FileMetadata> {
         self.db.values().cloned().collect()
     }
+    
+    // TODO: make this more efficient
+    pub fn tags(&self) -> Vec<String> {
+        let mut tags: Vec<String> = Vec::new();
+        for each in self.db.values() {
+            if let Some(each_tags) = &each.tags {
+                for tag in each_tags {
+                    if !tags.contains(tag) {
+                        tags.push(tag.to_string());
+                    }
+                }
+            }
+        }
+        tags
+    }
 
     pub fn files_of_type(&self, ty: String) -> Vec<FileMetadata> {
         self.db
