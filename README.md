@@ -1,8 +1,8 @@
 # Pea server
 Pea server is a file storage service designed to work almost exclusively within the LAN (everything except Discovery should work with an internet connection). I made it entirely for my usage, with the hope of achieving the following functions
-Privacy: I don't want to store files or metadata about those files in anything outside of my LAN. 
-Lightweight: I want to use as few system resources as possible so I can run the file server either as a background application or in something like a raspberry PI
-Ease of use: Ideally once I have got the server running it should be dead simple to use.
++ Privacy: I don't want to store files or metadata about those files in anything outside of my LAN. 
++ Lightweight: I want to use as few system resources as possible so I can run the file server either as a background application or in something like a raspberry PI
++ Ease of use: Ideally once I have got the server running it should be dead simple to use.
 
 # How to use it
 ## Index files
