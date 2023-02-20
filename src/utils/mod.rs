@@ -158,6 +158,40 @@ mod tests {
     }
 
     #[test]
+    fn test_file_tag_querying() {
+        let test_storage = &PathBuf::from("./libtest_6");
+        let index_path = &PathBuf::from("./libtest_6.index");
+        let files = vec![
+            "./libtest_6/1.mp4",
+            "./libtest_6/a/2.mp4",
+            "./libtest_6/a/b/3.mp4",
+            "./libtest_6/c/b/4.mp4",
+        ];
+        for file in files {
+            create_nested_file(Path::new(file));
+        }
+        let file_index = index_for_dir(index_path, test_storage);
+
+        let mut res_1_names = file_index
+            .files_of_tag(vec!["a".to_string(), "b".to_string()])
+            .iter()
+            .map(|file| file.name.clone())
+            .collect::<Vec<String>>();
+        res_1_names.sort_unstable();
+        assert_eq!(res_1_names, vec![String::from("3.mp4")]);
+
+        let mut res_2_names = file_index
+            .files_of_tag(vec!["b".to_string()])
+            .iter()
+            .map(|file| file.name.clone())
+            .collect::<Vec<String>>();
+        res_2_names.sort_unstable();
+        assert_eq!(res_2_names, vec![String::from("3.mp4"), String::from("4.mp4")]);
+
+        cleanup_storage(index_path, test_storage);
+    }
+
+    #[test]
     fn test_registering_service() {
         if !Path::new("config.json").exists() {
             return;
