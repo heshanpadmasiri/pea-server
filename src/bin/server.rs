@@ -142,6 +142,29 @@ async fn get_tags(state: State) -> actix_web::HttpResponse {
         .body(body)
 }
 
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
+struct TagQuery {
+    // if ty is "" then it is ignored
+    ty: String,
+    tags: Vec<String>,
+}
+
+async fn get_files_by_tags(req: actix_web::HttpRequest, state: State) -> actix_web::HttpResponse {
+    let query = req.query_string();
+    let query = serde_json::from_str::<TagQuery>(query).unwrap();
+    let index = state.file_index.lock().unwrap();
+    let files = if query.ty == "" {
+        index.files_of_tag(&query.tags)
+    } else {
+        index.files_of_tag(&query.tags).into_iter().filter(|file| file.ty == query.ty).collect()
+    };
+    let body = serde_json::to_string(&files).unwrap();
+    actix_web::HttpResponse::Ok()
+        .content_type("application/json")
+        .body(body)
+}
+
 async fn post_file(
     mut payload: actix_multipart::Multipart,
     state: State,

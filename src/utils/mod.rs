@@ -173,7 +173,7 @@ mod tests {
         let file_index = index_for_dir(index_path, test_storage);
 
         let mut res_1_names = file_index
-            .files_of_tag(vec!["a".to_string(), "b".to_string()])
+            .files_of_tag(&vec!["a".to_string(), "b".to_string()])
             .iter()
             .map(|file| file.name.clone())
             .collect::<Vec<String>>();
@@ -181,7 +181,7 @@ mod tests {
         assert_eq!(res_1_names, vec![String::from("3.mp4")]);
 
         let mut res_2_names = file_index
-            .files_of_tag(vec!["b".to_string()])
+            .files_of_tag(&vec!["b".to_string()])
             .iter()
             .map(|file| file.name.clone())
             .collect::<Vec<String>>();
