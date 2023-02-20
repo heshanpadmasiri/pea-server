@@ -14,8 +14,7 @@ pub struct FileMetadata {
     pub id: u64,
     pub ty: String,
     pub path: PathBuf,
-    // TODO: make this option
-    pub tags: Vec<String>
+    pub tags: Option<Vec<String>>
 }
 
 #[derive(Debug)]
@@ -83,7 +82,7 @@ impl FileIndex {
     }
 
     pub fn add_dir(&mut self, path: &Path) -> Result<(), FileErr> {
-        let new_files = files_in_dir(path, vec![])?;
+        let new_files = files_in_dir(path, None)?;
         for each in new_files {
             self.add_file_to_db(each);
         }
@@ -94,7 +93,7 @@ impl FileIndex {
         if path.is_dir() {
             panic!("use `add_dir` to add directory");
         }
-        self.add_file_to_db(file_metadata(path, vec![]));
+        self.add_file_to_db(file_metadata(path, None));
         serialize_db(&self.index_file, &self.db)
     }
 
@@ -187,7 +186,7 @@ fn serialize_db(path: &Path, db: &FileDB) -> Result<(), FileErr> {
     }
 }
 
-fn files_in_dir(path: &Path, tags: Vec<String>) -> Result<Vec<FileMetadata>, FileErr> {
+fn files_in_dir(path: &Path, tags: Option<Vec<String>>) -> Result<Vec<FileMetadata>, FileErr> {
     if !path.is_dir() {
         return Err(FileErr::PathDoesNotExist);
     }
@@ -198,8 +197,15 @@ fn files_in_dir(path: &Path, tags: Vec<String>) -> Result<Vec<FileMetadata>, Fil
         .map(|each| each.path())
     {
         if child_path.is_dir() {
-            let mut new_tags = tags.clone();
-            new_tags.push(child_path.file_name().unwrap().to_str().unwrap().to_string());
+            let new_tag = child_path.file_name().unwrap().to_string_lossy().to_string();
+            let new_tags = match &tags {
+                Some(tags) => {
+                    let mut buffer = tags.clone();
+                    buffer.push(new_tag);
+                    Some(buffer)
+                },
+                None => Some(vec![new_tag]),
+            };
             metadata.extend(files_in_dir(&child_path, new_tags)?);
         } else if child_path.extension().is_some() {
             metadata.push(file_metadata(&child_path, tags.clone()));
@@ -208,7 +214,7 @@ fn files_in_dir(path: &Path, tags: Vec<String>) -> Result<Vec<FileMetadata>, Fil
     Ok(metadata)
 }
 
-fn file_metadata(path: &Path, tags: Vec<String>) -> FileMetadata {
+fn file_metadata(path: &Path, tags: Option<Vec<String>>) -> FileMetadata {
     let name = path
         .file_name()
         .expect("expect filename")
