@@ -57,7 +57,7 @@ async fn main() -> std::io::Result<()> {
             .expect("server running should not fail");
     });
     if let Some(server) = &register_data {
-        register_server(&server).expect("expect server registration to succeed");
+        register_server(server).expect("expect server registration to succeed");
     }
     input_listener(register_data);
     Ok(())
