@@ -91,6 +91,7 @@ fn create_and_run_server(config: Config) -> std::io::Result<actix_web::dev::Serv
             .wrap(cors)
             .route("/", actix_web::web::get().to(index))
             .route("/files", actix_web::web::get().to(get_files))
+            .route("/tags", actix_web::web::get().to(get_tags))
             .route("/file", actix_web::web::post().to(post_file))
             .route("/files/{type}", actix_web::web::get().to(get_file_by_type))
             .service(
@@ -127,6 +128,15 @@ async fn get_files(state: State) -> actix_web::HttpResponse {
     let index = state.file_index.lock().unwrap();
     let files = all_files(&index);
     let body = serde_json::to_string(&files).unwrap();
+    actix_web::HttpResponse::Ok()
+        .content_type("application/json")
+        .body(body)
+}
+
+async fn get_tags(state: State) -> actix_web::HttpResponse {
+    let index = state.file_index.lock().unwrap();
+    let tags = index.tags();
+    let body = serde_json::to_string(&tags).unwrap();
     actix_web::HttpResponse::Ok()
         .content_type("application/json")
         .body(body)
@@ -231,7 +241,8 @@ mod tests {
     };
 
     use crate::{
-        create_and_run_server, get_file_by_type, index, post_file, Config, FileData, ServerState,
+        create_and_run_server, get_file_by_type, get_tags, index, post_file, Config, FileData,
+        ServerState,
     };
     use actix_web::{
         http::header::{self, ContentType, HeaderMap},
@@ -375,6 +386,54 @@ mod tests {
         std::fs::remove_file(test_index_path).expect("expect cleaning test index file to succeed");
     }
 
+    #[actix_web::test]
+    async fn can_get_all_tags() {
+        initialize();
+        let test_index_path = PathBuf::from("./get_all_tags.json");
+        let files = vec![
+            FileMetadata {
+                name: "1.txt".to_string(),
+                id: 1,
+                ty: "txt".to_string(),
+                path: PathBuf::from("./dummy-file/1.txt"),
+                tags: Some(vec!["tag1".to_string(), "tag2".to_string()]),
+            },
+            FileMetadata {
+                name: "2.mp4".to_string(),
+                id: 2,
+                ty: "mp4".to_string(),
+                path: PathBuf::from("./dummy-file/2.mp4"),
+                tags: Some(vec![
+                    "tag1".to_string(),
+                    "tag4".to_string(),
+                    "tag3".to_string(),
+                ]),
+            },
+        ];
+        let body = serde_json::to_string_pretty(&files).unwrap();
+        std::fs::write(&test_index_path, body).expect("expect creating index file to succeed");
+        let server = test::init_service(
+            App::new()
+                .app_data(actix_web::web::Data::new(ServerState {
+                    file_index: Mutex::new(FileIndex::new(&test_index_path)),
+                }))
+                .route("/tags", web::get().to(get_tags)),
+        )
+        .await;
+        let request = test::TestRequest::get().uri("/tags").to_request();
+        let response = test::call_service(&server, request).await;
+        assert!(response.status().is_success());
+        let mut response_body: Vec<String> = test::read_body_json(response).await;
+        response_body.sort();
+        let expected = vec![
+            "tag1".to_string(),
+            "tag2".to_string(),
+            "tag3".to_string(),
+            "tag4".to_string(),
+        ];
+        assert_eq!(response_body, expected);
+        std::fs::remove_file(test_index_path).expect("expect cleaning test index file to succeed");
+    }
     // every test properly creating the content dir
     fn initialize() {
         INIT.call_once(|| {

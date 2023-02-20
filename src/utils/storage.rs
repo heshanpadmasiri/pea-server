@@ -1,5 +1,5 @@
 use std::{
-    collections::{hash_map::DefaultHasher, HashMap},
+    collections::{hash_map::DefaultHasher, HashMap, HashSet},
     fs::File,
     hash::{Hash, Hasher},
     io::Write,
@@ -64,6 +64,16 @@ impl FileIndex {
 
     pub fn files(&self) -> Vec<FileMetadata> {
         self.db.values().cloned().collect()
+    }
+
+    pub fn tags(&self) -> Vec<String> {
+        let buffer: HashSet<String> = self
+            .db
+            .values()
+            .filter_map(|each| each.tags.clone())
+            .flatten()
+            .collect();
+        buffer.into_iter().collect()
     }
 
     pub fn files_of_type(&self, ty: String) -> Vec<FileMetadata> {
