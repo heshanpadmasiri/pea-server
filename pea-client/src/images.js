@@ -105,7 +105,6 @@ class ImagePage extends React.Component {
   }
 
   image_gallery() {
-    console.log(this.state);
     const { images, loading } = this.state;
     if (loading) {
       return (<div>Loading...</div>)
@@ -114,8 +113,7 @@ class ImagePage extends React.Component {
       const items = images.map((each) => {
         return { original: `${config.SERVER_URL}/content/${each.id}` };
       });
-      console.log("items", items);
-      return (<ImageGallery items={items} infinite={true} />)
+      return (<ImageGallery items={items} infinite={true} lazyLoad={true}/>)
     }
   }
 
