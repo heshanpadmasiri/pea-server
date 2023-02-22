@@ -216,6 +216,7 @@ fn serialize_db(path: &Path, db: &FileDB) -> Result<(), FileErr> {
 
 fn files_in_dir(path: &Path, tags: Option<Vec<String>>) -> Result<Vec<FileMetadata>, FileErr> {
     if !path.is_dir() {
+        error!("path {path:?} is not a directory");
         return Err(FileErr::PathDoesNotExist);
     }
     let mut metadata = Vec::new();
