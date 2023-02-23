@@ -7,8 +7,14 @@ use std::{
 fn main() {
     let client_content_dir = PathBuf::from("./client-content");
     let client_src_root = PathBuf::from("./pea-client");
+    let client_config_paths = [
+        client_src_root.join("src/config.json"),
+        PathBuf::from("./mobile-client/config.json"),
+    ];
     if Ok("release".to_owned()) == std::env::var("PROFILE") {
-        create_server_config(&client_src_root.join("src/config.json"));
+        for each in client_config_paths {
+            create_server_config(&each);
+        }
         clean_and_create_dir(&client_content_dir);
         create_and_copy_static_page(&client_src_root, &client_content_dir)
     }
