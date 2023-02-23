@@ -1,0 +1,16 @@
+{
+    "folders": [
+        {
+            "path": "choreo"
+        },
+        {
+            "path": "mobile-client"
+        },
+        {
+            "path": "pea-client"
+        },
+        {
+            "path": "pea-src"
+        }
+    ]
+}
