@@ -1,8 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
-import { ReactElement, useState } from 'react';
-import { StyleSheet, Text, View, FlatList, SafeAreaView, Platform } from 'react-native';
+import { View } from 'react-native';
 import OtherFiles from './Components/OtherFiles';
-import { getFiles, Metadata } from './utils/services';
+import styles from './utils/styles';
 
 export default function App() {
   return (
@@ -12,9 +11,3 @@ export default function App() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1
-  },
-});

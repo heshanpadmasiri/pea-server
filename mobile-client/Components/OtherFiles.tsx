@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { StyleSheet, Text, View, FlatList, SafeAreaView, Platform, StatusBar } from 'react-native';
+import { StyleSheet, Text, View, FlatList, SafeAreaView, Platform } from 'react-native';
 import { getFiles, Metadata } from "../utils/services";
 import { get_file_data_and_update_state } from "../utils/states";
+import styles from "../utils/styles";
 
 export default function OtherFiles() {
     const [isLoading, setIsLoading] = useState(true);
@@ -35,14 +36,3 @@ export default function OtherFiles() {
         )
     }
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1
-    },
-    safeArea: {
-        flex: 1,
-        paddingHorizontal: 10,
-        paddingTop: Platform.OS === "android" ? 25 : 0,
-    }
-});
