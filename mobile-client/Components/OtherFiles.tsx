@@ -1,25 +1,14 @@
 import { useState } from "react";
 import { StyleSheet, Text, View, FlatList, SafeAreaView, Platform, StatusBar } from 'react-native';
-import { getFiles, Metadata } from "../services";
+import { getFiles, Metadata } from "../utils/services";
+import { get_file_data_and_update_state } from "../utils/states";
 
 export default function OtherFiles() {
     const [isLoading, setIsLoading] = useState(true);
     const [isError, setIsError] = useState(false);
     const [files, setFiles] = useState<Metadata[]>([]);
 
-    const get_data = (setLoading: (value: boolean) => void,
-        setError: (value: boolean) => void, setFiles: (value: Metadata[]) => void) => {
-        getFiles().then((files) => {
-            setFiles(files);
-        }).catch((err) => {
-            console.error(err);
-            setError(true);
-        }).finally(() => {
-            setLoading(false);
-        })
-    }
-
-    get_data(setIsLoading, setIsError, setFiles);
+    get_file_data_and_update_state(getFiles, setFiles, setIsLoading, setIsError);
 
     if (isLoading) {
         return (
