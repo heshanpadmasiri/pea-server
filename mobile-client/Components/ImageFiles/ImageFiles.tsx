@@ -40,6 +40,8 @@ export default function ImageFiles() {
         )
     }
     else {
+        // TODO: support refreshing by pulling down
+        // TODO: support tag selection
         return (
             <SafeAreaView style={styles.safeArea}>
                 <Button title='Open Gallery' onPress={openGallery}/>

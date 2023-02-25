@@ -11,6 +11,13 @@ const styles = StyleSheet.create({
     gallery: {
         flex: 1,
         backgroundColor: 'black'
+    },
+    grid: {
+        flexDirection: 'row',
+    },
+    grid_image: {
+        height: 100,
+        width: 100
     }
 });
 

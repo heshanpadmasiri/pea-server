@@ -1,5 +1,6 @@
-import { View, Text, FlatList } from "react-native";
+import { View, Text, FlatList, Image, ScrollView } from "react-native";
 import { fileContentUrl, Metadata } from "../../utils/services"
+import styles from "../../utils/styles";
 
 export type ImageGridProps = {
     imageFiles: Metadata[];
@@ -7,14 +8,24 @@ export type ImageGridProps = {
 
 const ImageGrid = (props: ImageGridProps) => {
     const { imageFiles } = props;
-    const data = imageFiles.map((file: Metadata) => {
-        return { key: file.name };
-    })
     return (
-        <View>
-            <FlatList data={data} renderItem={({ item }) => <Text>{item.key}</Text>} />
-        </View>
+            <FlatList
+                contentContainerStyle={{ alignSelf: 'flex-start' }}
+                numColumns={4}
+                showsVerticalScrollIndicator={false}
+                showsHorizontalScrollIndicator={false} data={imageFiles}
+                renderItem={({ item }) => imageGridItem(item)}
+                keyExtractor={item => item.id}
+            />
     )
+}
+
+const imageGridItem = (file: Metadata) => {
+    return (
+        <View key={file.id}>
+            <Image style={styles.grid_image} source={{ uri: fileContentUrl(file) }} />
+        </View>
+    );
 }
 
 export default ImageGrid;
