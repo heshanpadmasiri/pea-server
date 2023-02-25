@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { StyleSheet, Text, View, FlatList, SafeAreaView, Platform } from 'react-native';
+import { Text, View, FlatList, SafeAreaView } from 'react-native';
 import { getFiles, Metadata } from "../utils/services";
 import { get_file_data_and_update_state } from "../utils/states";
 import styles from "../utils/styles";
