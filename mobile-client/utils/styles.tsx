@@ -18,6 +18,10 @@ const styles = StyleSheet.create({
     grid_image: {
         height: 100,
         width: 100
+    },
+    switch_container: {
+        flex: 1,
+        flexDirection: 'row'
     }
 });
 

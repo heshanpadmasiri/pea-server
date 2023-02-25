@@ -15,7 +15,7 @@ export default function ImageFiles() {
 
     const [galleryOpen, setGalleryOpen] = useState(false);
     useEffect(() => {
-        if(!initialized) {
+        if (!initialized) {
             getImageData(setImageData, setImages, setIsError, setIsLoading);
             setInitialized(true);
         }
@@ -49,7 +49,7 @@ export default function ImageFiles() {
         return (
             <SafeAreaView style={styles.safeArea}>
                 <TagSelector updateSelectedTags={updateSelectedTags} selectedTags={selectedTags} />
-                <Button title='Open Gallery' onPress={openGallery}/>
+                <Button title='Open Gallery' onPress={openGallery} />
                 <ImageGallery isOpen={galleryOpen} close={closeGallery} images={images} renderHeaderComponent={renderHeaderComponent} />
                 <ImageGrid imageFiles={imageData} />
             </SafeAreaView>
@@ -58,12 +58,12 @@ export default function ImageFiles() {
 }
 
 function getImageData(setImageData: (value: Metadata[]) => void,
-                      setImages: (value: ImageObject[]) => void,
-                      setIsError: (value: boolean) => void,
-                      setIsLoading: (value: boolean) => void) {
+    setImages: (value: ImageObject[]) => void,
+    setIsError: (value: boolean) => void,
+    setIsLoading: (value: boolean) => void) {
     getImages().then((files: Metadata[]) => {
         const images = files.map((file: Metadata) => {
-            return { url: fileContentUrl(file)}
+            return { url: fileContentUrl(file) }
         });
         setImageData(files);
         setImages(images);
