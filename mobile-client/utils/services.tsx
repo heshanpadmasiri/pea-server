@@ -54,6 +54,16 @@ export function isPdf(file: Metadata): boolean {
     return file.ty === "pdf";
 }
 
+export function getVideos(): Promise<Metadata[]> {
+    return new Promise((resolve, reject) => {
+        axios.get(config.SERVER_URL + "/files/" + "mp4").then((res) => {
+            return resolve(res.data);
+        }).catch((err) => {
+            return reject(err);
+        })
+    });
+}
+
 export function isVideo(file: Metadata): boolean {
     return file.ty === "mp4";
 }
