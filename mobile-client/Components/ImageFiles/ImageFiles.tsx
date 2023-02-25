@@ -4,12 +4,14 @@ import { ImageGallery, ImageObject } from '@georstat/react-native-image-gallery'
 import { fileContentUrl, getImages, Metadata } from '../../utils/services';
 import styles from '../../utils/styles';
 import ImageGrid from './ImageGrid';
+import TagSelector from '../TagSelector';
 export default function ImageFiles() {
     const [isLoading, setIsLoading] = useState(true);
     const [initialized, setInitialized] = useState(false);
     const [isError, setIsError] = useState(false);
     const [images, setImages] = useState<ImageObject[]>([]);
     const [imageData, setImageData] = useState<Metadata[]>([]);
+    const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
     const [galleryOpen, setGalleryOpen] = useState(false);
     useEffect(() => {
@@ -24,6 +26,8 @@ export default function ImageFiles() {
     const renderHeaderComponent = (_image: ImageObject, _index: number) => {
         return <Button title='Close' onPress={closeGallery} />
     }
+
+    const updateSelectedTags = (tags: string[]) => setSelectedTags(tags);
 
     if (isLoading) {
         return (
@@ -44,6 +48,7 @@ export default function ImageFiles() {
         // TODO: support tag selection
         return (
             <SafeAreaView style={styles.safeArea}>
+                <TagSelector updateSelectedTags={updateSelectedTags} selectedTags={selectedTags} />
                 <Button title='Open Gallery' onPress={openGallery}/>
                 <ImageGallery isOpen={galleryOpen} close={closeGallery} images={images} renderHeaderComponent={renderHeaderComponent} />
                 <ImageGrid imageFiles={imageData} />

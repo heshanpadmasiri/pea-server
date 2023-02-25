@@ -71,3 +71,13 @@ export function getVideos(): Promise<Metadata[]> {
 export function isVideo(file: Metadata): boolean {
     return file.ty === "mp4";
 }
+
+export function getTags(): Promise<string[]> {
+    return new Promise((resolve, reject) => {
+        axios.get(config.SERVER_URL + "/tags").then((res) => {
+            return resolve(res.data);
+        }).catch((err) => {
+            return reject(err);
+        })
+    });
+}
