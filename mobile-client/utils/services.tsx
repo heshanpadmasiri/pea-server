@@ -8,6 +8,10 @@ export interface Metadata {
     tags: string[],
 }
 
+export function fileContentUrl(file: Metadata): string {
+    return config.SERVER_URL + "/content/" + file.id;
+}
+
 export function getFiles(): Promise<Metadata[]> {
     return new Promise((resolve, reject) => {
         axios.get(config.SERVER_URL + "/files")

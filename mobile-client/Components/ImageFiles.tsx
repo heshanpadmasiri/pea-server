@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
-import { FlatList, SafeAreaView, Text, View } from 'react-native';
-import { getImages, Metadata } from '../utils/services';
+import { SafeAreaView, Text, View } from 'react-native';
+import { ImageGallery } from '@georstat/react-native-image-gallery';
+import { fileContentUrl, getImages, Metadata } from '../utils/services';
 import { get_file_data_and_update_state } from '../utils/states';
 import styles from '../utils/styles';
 export default function ImageFiles() {
     const [isLoading, setIsLoading] = useState(true);
     const [isError, setIsError] = useState(false);
     const [files, setFiles] = useState<Metadata[]>([]);
+    const [galleryOpen, setGalleryOpen] = useState(true);
     useEffect(() => {
         get_file_data_and_update_state(getImages, setFiles, setIsLoading, setIsError);
     });
@@ -25,13 +27,14 @@ export default function ImageFiles() {
         )
     }
     else {
-        const data = files.map((file: Metadata) => {
-            return { key: file.name };
-        })
+        const closeGallery = () => setGalleryOpen(false);
+        const images = files.map((file: Metadata) => {
+            return { url: fileContentUrl(file)}
+        });
         // TODO: properly render images
         return (
             <SafeAreaView style={styles.safeArea}>
-                <FlatList data={data} renderItem={({ item }) => <Text>{item.key}</Text>} />
+                <ImageGallery isOpen={galleryOpen} close={closeGallery} images={images} />
             </SafeAreaView>
         )
     }
