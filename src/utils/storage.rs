@@ -222,9 +222,11 @@ fn files_in_dir(path: &Path, tags: Option<Vec<String>>) -> Result<Vec<FileMetada
     let mut metadata = Vec::new();
     for child_path in std::fs::read_dir(path)
         .expect("expect iteration over directory to succeed")
-        .flatten()
-        .map(|each| each.path())
+        .map(|each| each.expect("expect dir entry to be valid").path())
     {
+        if is_system_file(&child_path) {
+            continue;
+        }
         if child_path.is_dir() {
             let new_tag = child_path
                 .file_name()
@@ -245,6 +247,24 @@ fn files_in_dir(path: &Path, tags: Option<Vec<String>>) -> Result<Vec<FileMetada
         }
     }
     Ok(metadata)
+}
+
+fn is_system_file(path: &Path) -> bool {
+    if path.is_dir() {
+        return false;
+    }
+    let file_name = path.file_name().unwrap().to_string_lossy();
+    let extension = match path.extension() {
+        Some(extension) => extension.to_string_lossy(),
+        None => std::borrow::Cow::Borrowed(""),
+    };
+    if extension == "enc" {
+        return true;
+    }
+    if file_name == ".DS_Store" {
+        return true;
+    }
+    return file_name.trim().starts_with("._");
 }
 
 fn file_metadata(path: &Path, tags: Option<Vec<String>>) -> FileMetadata {
