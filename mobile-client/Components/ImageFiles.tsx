@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { SafeAreaView, Text, View } from 'react-native';
-import { ImageGallery } from '@georstat/react-native-image-gallery';
+import { Button, SafeAreaView, Text, View } from 'react-native';
+import { ImageGallery, ImageObject } from '@georstat/react-native-image-gallery';
 import { fileContentUrl, getImages, Metadata } from '../utils/services';
 import { get_file_data_and_update_state } from '../utils/states';
 import styles from '../utils/styles';
@@ -8,7 +8,13 @@ export default function ImageFiles() {
     const [isLoading, setIsLoading] = useState(true);
     const [isError, setIsError] = useState(false);
     const [files, setFiles] = useState<Metadata[]>([]);
-    const [galleryOpen, setGalleryOpen] = useState(true);
+    const [galleryOpen, setGalleryOpen] = useState(false);
+    const closeGallery = () => setGalleryOpen(false);
+    const openGallery = () => setGalleryOpen(true);
+
+    const renderHeaderComponent = (_image: ImageObject, _index: number) => {
+        return <Button title='Close' onPress={closeGallery} />
+    }
     useEffect(() => {
         get_file_data_and_update_state(getImages, setFiles, setIsLoading, setIsError);
     });
@@ -27,14 +33,13 @@ export default function ImageFiles() {
         )
     }
     else {
-        const closeGallery = () => setGalleryOpen(false);
         const images = files.map((file: Metadata) => {
             return { url: fileContentUrl(file)}
         });
-        // TODO: properly render images
         return (
             <SafeAreaView style={styles.safeArea}>
-                <ImageGallery isOpen={galleryOpen} close={closeGallery} images={images} />
+                <Button title='Open Gallery' onPress={openGallery}/>
+                <ImageGallery isOpen={galleryOpen} close={closeGallery} images={images} renderHeaderComponent={renderHeaderComponent} />
             </SafeAreaView>
         )
     }
