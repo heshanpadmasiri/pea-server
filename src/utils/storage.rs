@@ -256,7 +256,7 @@ fn is_system_file(path: &Path) -> bool {
     let file_name = path.file_name().unwrap().to_string_lossy();
     let extension = match path.extension() {
         Some(extension) => extension.to_string_lossy(),
-        None => std::borrow::Cow::Borrowed("")
+        None => std::borrow::Cow::Borrowed(""),
     };
     if extension == "enc" {
         return true;
