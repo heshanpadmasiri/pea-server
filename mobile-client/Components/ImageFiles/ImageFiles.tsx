@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button, SafeAreaView, Text, View } from 'react-native';
 import { ImageGallery, ImageObject } from '@georstat/react-native-image-gallery';
-import { fileContentUrl, getImages, Metadata } from '../../utils/services';
+import { fileContentUrl, getImages, getImagesWithTags, Metadata } from '../../utils/services';
 import styles from '../../utils/styles';
 import ImageGrid from './ImageGrid';
 import TagSelector from '../TagSelector';
@@ -13,61 +13,79 @@ export default function ImageFiles() {
     const [imageData, setImageData] = useState<Metadata[]>([]);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
-    const [galleryOpen, setGalleryOpen] = useState(false);
     useEffect(() => {
         if (!initialized) {
-            getImageData(setImageData, setImages, setIsError, setIsLoading);
+            getImageData(selectedTags, setImageData, setImages, setIsError, setIsLoading);
             setInitialized(true);
         }
     });
 
+    const updateSelectedTags = (tags: string[]) => {
+        console.log("update tags: " + tags.toString())
+        setSelectedTags(tags)
+        getImageData(tags, setImageData, setImages, setIsError, setIsLoading);
+    };
+
+    return (
+        <SafeAreaView style={styles.safeArea}>
+            <TagSelector updateSelectedTags={updateSelectedTags} selectedTags={selectedTags} />
+            <ImageBody isLoading={isLoading} isError={isError} images={images} imageData={imageData} />
+        </SafeAreaView>
+    )
+}
+
+type ImageBodyProps = {
+    isLoading: boolean,
+    isError: boolean,
+    images: ImageObject[],
+    imageData: Metadata[],
+}
+
+function ImageBody(props: ImageBodyProps) {
+    const { isLoading, isError, images, imageData } = props;
+    const [galleryOpen, setGalleryOpen] = useState(false);
     const closeGallery = () => setGalleryOpen(false);
     const openGallery = () => setGalleryOpen(true);
     const renderHeaderComponent = (_image: ImageObject, _index: number) => {
         return <Button title='Close' onPress={closeGallery} />
     }
-
-    const updateSelectedTags = (tags: string[]) => setSelectedTags(tags);
-
     if (isLoading) {
         return (
-            <View style={styles.container}>
-                <Text>Loading...</Text>
-            </View>
+            <Text>Loading...</Text>
         );
     }
     else if (isError) {
         return (
-            <View style={styles.container}>
-                <Text>Error!</Text>
-            </View>
+            <Text>Error!</Text>
         )
     }
     else {
-        // TODO: support refreshing by pulling down
-        // TODO: support tag selection
         return (
-            <SafeAreaView style={styles.safeArea}>
-                <TagSelector updateSelectedTags={updateSelectedTags} selectedTags={selectedTags} />
+            <View style={styles.safeArea}>
                 <Button title='Open Gallery' onPress={openGallery} />
                 <ImageGallery isOpen={galleryOpen} close={closeGallery} images={images} renderHeaderComponent={renderHeaderComponent} />
                 <ImageGrid imageFiles={imageData} />
-            </SafeAreaView>
+            </View>
         )
     }
 }
 
-function getImageData(setImageData: (value: Metadata[]) => void,
-    setImages: (value: ImageObject[]) => void,
-    setIsError: (value: boolean) => void,
-    setIsLoading: (value: boolean) => void) {
-    getImages().then((files: Metadata[]) => {
+function getImageData(selectedTags: string[],
+                      setImageData: (value: Metadata[]) => void,
+                      setImages: (value: ImageObject[]) => void,
+                      setIsError: (value: boolean) => void,
+                      setIsLoading: (value: boolean) => void) {
+    setIsLoading(true);
+    const imageGetter = selectedTags.length > 0 ? getImagesWithTags(selectedTags) : getImages();
+    console.log(selectedTags);
+    imageGetter.then((files: Metadata[]) => {
         const images = files.map((file: Metadata) => {
             return { url: fileContentUrl(file) }
         });
         setImageData(files);
         setImages(images);
-    }).catch((_err) => {
+    }).catch((err) => {
+        console.error(err);
         setIsError(true);
     }).finally(() => {
         setIsLoading(false);

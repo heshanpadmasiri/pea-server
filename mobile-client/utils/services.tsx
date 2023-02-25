@@ -39,6 +39,20 @@ export function getImages(): Promise<Metadata[]> {
     });
 }
 
+export function getImagesWithTags(tags: string[]): Promise<Metadata[]> {
+    return new Promise((resolve, reject) => {
+        Promise.all(IMAGE_TYPES.map(async (type) => {
+            let res = await axios.post(config.SERVER_URL + "/query", { data: { tags: tags, ty: type } });
+            return res.data;
+        })).then((image_arrays) => {
+            resolve(image_arrays.flat())
+        }).catch((err) => {
+            reject(err);
+        });
+
+    });
+}
+
 export function isImage(file: Metadata): boolean {
     return IMAGE_TYPES.includes(file.ty);
 }
