@@ -4,9 +4,8 @@ const styles = StyleSheet.create({
         flex: 1
     },
     safeArea: {
-        flex: 1,
+        flex: 2,
         paddingHorizontal: 10,
-        paddingTop: Platform.OS === "android" ? 25 : 0,
     },
     gallery: {
         flex: 1,
@@ -18,7 +17,16 @@ const styles = StyleSheet.create({
     grid_image: {
         height: 100,
         width: 100
-    }
+    },
+    tag_selector: {
+        flex: 1,
+    },
+    switch_container: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
 });
 
 

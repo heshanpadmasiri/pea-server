@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FlatList, SafeAreaView, Text, View } from 'react-native';
 import { getVideos, Metadata } from '../utils/services';
-import { get_file_data_and_update_state } from '../utils/states';
+import { get_data_and_update_state } from '../utils/states';
 import styles from '../utils/styles';
 export default function VideoFiles() {
     const [isLoading, setIsLoading] = useState(true);
@@ -10,7 +10,7 @@ export default function VideoFiles() {
     const [initialized, setInitialized] = useState(false);
     useEffect(() => {
         if (!initialized) {
-            get_file_data_and_update_state<Metadata>(getVideos, setFiles, setIsLoading, setIsError);
+            get_data_and_update_state<Metadata>(getVideos, setFiles, setIsLoading, setIsError);
             setInitialized(true)
         }
     });

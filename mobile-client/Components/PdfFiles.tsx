@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FlatList, SafeAreaView, Text, View } from 'react-native';
 import { getPdfs, Metadata } from '../utils/services';
-import { get_file_data_and_update_state } from '../utils/states';
+import { get_data_and_update_state } from '../utils/states';
 import styles from '../utils/styles';
 export default function PdfFiles() {
     const [isLoading, setIsLoading] = useState(true);
@@ -10,7 +10,7 @@ export default function PdfFiles() {
     const [initialized, setInitialized] = useState(false);
     useEffect(() => {
         if (!initialized) {
-            get_file_data_and_update_state<Metadata>(getPdfs, setFiles, setIsLoading, setIsError);
+            get_data_and_update_state<Metadata>(getPdfs, setFiles, setIsLoading, setIsError);
             setInitialized(true);
         }
     });

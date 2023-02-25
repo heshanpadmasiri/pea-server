@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Text, View, FlatList, SafeAreaView } from 'react-native';
 import { getFiles, isImage, isPdf, isVideo, Metadata } from "../utils/services";
-import { get_file_data_and_update_state } from "../utils/states";
+import { get_data_and_update_state } from "../utils/states";
 import styles from "../utils/styles";
 
 export default function OtherFiles() {
@@ -11,7 +11,7 @@ export default function OtherFiles() {
     const [initialized, setInitialized] = useState(false);
     useEffect(() => {
         if (!initialized) {
-            get_file_data_and_update_state<Metadata>(getOtherFiles, setFiles, setIsLoading, setIsError);
+            get_data_and_update_state<Metadata>(getOtherFiles, setFiles, setIsLoading, setIsError);
             setInitialized(true);
         }
     });
