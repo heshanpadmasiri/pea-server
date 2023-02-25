@@ -57,7 +57,7 @@ const TagSelector = (props: TagSelectorProps) => {
                 />
             )
         })
-        return (<ScrollView>{selectors}</ScrollView>);
+        return (<ScrollView style={styles.tag_selector}>{selectors}</ScrollView>);
     }
 }
 
