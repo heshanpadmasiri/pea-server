@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Text, View, FlatList, SafeAreaView } from 'react-native';
-import { getFiles, Metadata } from "../utils/services";
+import { getFiles, isImage, isPdf, isVideo, Metadata } from "../utils/services";
 import { get_file_data_and_update_state } from "../utils/states";
 import styles from "../utils/styles";
 
@@ -8,8 +8,12 @@ export default function OtherFiles() {
     const [isLoading, setIsLoading] = useState(true);
     const [isError, setIsError] = useState(false);
     const [files, setFiles] = useState<Metadata[]>([]);
+    const [initialized, setInitialized] = useState(false);
     useEffect(() => {
-        get_file_data_and_update_state(getFiles, setFiles, setIsLoading, setIsError);
+        if (!initialized) {
+            get_file_data_and_update_state<Metadata>(getOtherFiles, setFiles, setIsLoading, setIsError);
+            setInitialized(true);
+        }
     });
 
     if (isLoading) {
@@ -36,4 +40,20 @@ export default function OtherFiles() {
             </SafeAreaView>
         )
     }
+}
+
+function getOtherFiles(): Promise<Metadata[]> {
+    return new Promise((resolve, reject) => {
+        getFiles().then((files: Metadata[]) => {
+            const other_files: Metadata[] = [];
+            for (const file of files) {
+                if (!isImage(file) && !isPdf(file) && !isVideo(file)) {
+                    other_files.push(file);
+                }
+            }
+            resolve(other_files);
+        }).catch((err) => {
+            reject(err);
+        })
+    });
 }

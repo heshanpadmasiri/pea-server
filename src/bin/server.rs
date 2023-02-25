@@ -135,6 +135,7 @@ async fn index(_req: actix_web::HttpRequest) -> actix_web::Result<actix_files::N
 type State = actix_web::web::Data<ServerState>;
 
 async fn get_files(state: State) -> actix_web::HttpResponse {
+    info!("Get file request received");
     let index = state.file_index.lock().unwrap();
     let files = all_files(&index);
     let body = serde_json::to_string(&files).unwrap();
@@ -220,6 +221,7 @@ async fn get_file_by_type(
     state: State,
 ) -> actix_web::Result<actix_web::HttpResponse> {
     let file_type = path.into_inner();
+    info!("Get file by type request received: {}", file_type);
     let index = state.file_index.lock().unwrap();
     let files: Vec<FileData> = index
         .files_of_type(file_type)
@@ -239,6 +241,7 @@ async fn get_content(
     let index = state.file_index.lock().unwrap();
     let file_name: String = req.match_info().query("file_name").parse().unwrap();
     let file_id = file_name.trim().parse::<u64>().unwrap();
+    info!("Get file request received: {}", file_name);
     let file_path = index.get_file_path(file_id).unwrap();
     Ok(actix_files::NamedFile::open(file_path)?)
 }

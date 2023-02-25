@@ -7,6 +7,17 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: 10,
         paddingTop: Platform.OS === "android" ? 25 : 0,
+    },
+    gallery: {
+        flex: 1,
+        backgroundColor: 'black'
+    },
+    grid: {
+        flexDirection: 'row',
+    },
+    grid_image: {
+        height: 100,
+        width: 100
     }
 });
 
