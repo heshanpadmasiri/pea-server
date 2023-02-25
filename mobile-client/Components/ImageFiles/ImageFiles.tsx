@@ -21,7 +21,6 @@ export default function ImageFiles() {
     });
 
     const updateSelectedTags = (tags: string[]) => {
-        console.log("update tags: " + tags.toString())
         setSelectedTags(tags)
         getImageData(tags, setImageData, setImages, setIsError, setIsLoading);
     };
@@ -77,7 +76,6 @@ function getImageData(selectedTags: string[],
                       setIsLoading: (value: boolean) => void) {
     setIsLoading(true);
     const imageGetter = selectedTags.length > 0 ? getImagesWithTags(selectedTags) : getImages();
-    console.log(selectedTags);
     imageGetter.then((files: Metadata[]) => {
         const images = files.map((file: Metadata) => {
             return { url: fileContentUrl(file) }

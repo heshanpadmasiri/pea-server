@@ -26,13 +26,9 @@ const TagSelector = (props: TagSelectorProps) => {
 
     const selectorToggleFunction = (tag: string) => {
         return (val: boolean) => {
-            if (!val) {
-                setSelectedTags(selectedTags.filter((selectedTag) => selectedTag !== tag));
-            }
-            else {
-                setSelectedTags([...selectedTags, tag]);
-            }
-            props.updateSelectedTags(selectedTags);
+            const newSelectedTags = !val ? selectedTags.filter((selectedTag) => selectedTag !== tag) : [...selectedTags, tag];
+            setSelectedTags(newSelectedTags);
+            props.updateSelectedTags(newSelectedTags);
         }
     }
 
