@@ -7,7 +7,7 @@ import styles from '../utils/styles';
 export default function ImageFiles() {
     const [isLoading, setIsLoading] = useState(true);
     const [isError, setIsError] = useState(false);
-    const [files, setFiles] = useState<Metadata[]>([]);
+    const [images, setImages] = useState<ImageObject[]>([]);
     const [galleryOpen, setGalleryOpen] = useState(false);
     const closeGallery = () => setGalleryOpen(false);
     const openGallery = () => setGalleryOpen(true);
@@ -16,7 +16,7 @@ export default function ImageFiles() {
         return <Button title='Close' onPress={closeGallery} />
     }
     useEffect(() => {
-        get_file_data_and_update_state<Metadata>(getImages, setFiles, setIsLoading, setIsError);
+        get_file_data_and_update_state<ImageObject>(getImageObjs, setImages, setIsLoading, setIsError);
     });
     if (isLoading) {
         return (
@@ -33,9 +33,6 @@ export default function ImageFiles() {
         )
     }
     else {
-        const images = files.map((file: Metadata) => {
-            return { url: fileContentUrl(file)}
-        });
         return (
             <SafeAreaView style={styles.safeArea}>
                 <Button title='Open Gallery' onPress={openGallery}/>
@@ -43,4 +40,17 @@ export default function ImageFiles() {
             </SafeAreaView>
         )
     }
+}
+
+function getImageObjs(): Promise<ImageObject[]> {
+    return new Promise((resolve, reject) => {
+        getImages().then((files: Metadata[]) => {
+            const images = files.map((file: Metadata) => {
+                return { url: fileContentUrl(file)}
+            });
+            resolve(images);
+        }).catch((err) => {
+            reject(err);
+        })
+    });
 }
