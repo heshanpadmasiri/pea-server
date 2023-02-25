@@ -18,3 +18,16 @@ export function getFiles(): Promise<Metadata[]> {
             })
     });
 }
+
+const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "bmp", "tiff", "tif", "svg", "webp"];
+export function isImage(file: Metadata): boolean {
+    return IMAGE_TYPES.includes(file.ty);
+}
+
+export function isPdf(file: Metadata): boolean {
+    return file.ty === "pdf";
+}
+
+export function isVideo(file: Metadata): boolean {
+    return file.ty === "mp4";
+}
