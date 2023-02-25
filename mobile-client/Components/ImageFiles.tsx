@@ -16,7 +16,7 @@ export default function ImageFiles() {
         return <Button title='Close' onPress={closeGallery} />
     }
     useEffect(() => {
-        get_file_data_and_update_state(getImages, setFiles, setIsLoading, setIsError);
+        get_file_data_and_update_state<Metadata>(getImages, setFiles, setIsLoading, setIsError);
     });
     if (isLoading) {
         return (

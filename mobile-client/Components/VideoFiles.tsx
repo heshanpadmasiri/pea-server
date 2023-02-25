@@ -8,7 +8,7 @@ export default function VideoFiles() {
     const [isError, setIsError] = useState(false);
     const [files, setFiles] = useState<Metadata[]>([]);
     useEffect(() => {
-        get_file_data_and_update_state(getVideos, setFiles, setIsLoading, setIsError);
+        get_file_data_and_update_state<Metadata>(getVideos, setFiles, setIsLoading, setIsError);
     });
     if (isLoading) {
         return (

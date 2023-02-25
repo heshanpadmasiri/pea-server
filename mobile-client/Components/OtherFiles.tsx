@@ -9,7 +9,7 @@ export default function OtherFiles() {
     const [isError, setIsError] = useState(false);
     const [files, setFiles] = useState<Metadata[]>([]);
     useEffect(() => {
-        get_file_data_and_update_state(getOtherFiles, setFiles, setIsLoading, setIsError);
+        get_file_data_and_update_state<Metadata>(getOtherFiles, setFiles, setIsLoading, setIsError);
     });
 
     if (isLoading) {
