@@ -39,6 +39,17 @@ export function isImage(file: Metadata): boolean {
     return IMAGE_TYPES.includes(file.ty);
 }
 
+export function getPdfs(): Promise<Metadata[]> {
+    return new Promise((resolve, reject) => {
+        axios.get(config.SERVER_URL + "/files/" + "pdf")
+            .then((res) => {
+                return resolve(res.data);
+            }).catch((err) => {
+                return reject(err);
+            })
+    });
+}
+
 export function isPdf(file: Metadata): boolean {
     return file.ty === "pdf";
 }
