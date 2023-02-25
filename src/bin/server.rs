@@ -241,6 +241,7 @@ async fn get_content(
     let index = state.file_index.lock().unwrap();
     let file_name: String = req.match_info().query("file_name").parse().unwrap();
     let file_id = file_name.trim().parse::<u64>().unwrap();
+    info!("Get file request received: {}", file_name);
     let file_path = index.get_file_path(file_id).unwrap();
     Ok(actix_files::NamedFile::open(file_path)?)
 }
