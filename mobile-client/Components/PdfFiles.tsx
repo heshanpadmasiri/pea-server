@@ -7,8 +7,12 @@ export default function PdfFiles() {
     const [isLoading, setIsLoading] = useState(true);
     const [isError, setIsError] = useState(false);
     const [files, setFiles] = useState<Metadata[]>([]);
+    const [initialized, setInitialized] = useState(false);
     useEffect(() => {
-        get_file_data_and_update_state<Metadata>(getPdfs, setFiles, setIsLoading, setIsError);
+        if (!initialized) {
+            get_file_data_and_update_state<Metadata>(getPdfs, setFiles, setIsLoading, setIsError);
+            setInitialized(true);
+        }
     });
     if (isLoading) {
         return (
