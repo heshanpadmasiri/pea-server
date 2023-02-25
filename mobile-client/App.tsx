@@ -5,7 +5,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import OtherFiles from './Components/OtherFiles';
 import styles from './utils/styles';
 import VideoFiles from './Components/VideoFiles';
-import ImageFiles from './Components/ImageFiles';
+import ImageFiles from './Components/ImageFiles/ImageFiles';
 import PdfFiles from './Components/PdfFiles';
 
 export default function App() {

@@ -1,23 +1,30 @@
 import { useEffect, useState } from 'react';
 import { Button, SafeAreaView, Text, View } from 'react-native';
 import { ImageGallery, ImageObject } from '@georstat/react-native-image-gallery';
-import { fileContentUrl, getImages, Metadata } from '../utils/services';
-import { get_file_data_and_update_state } from '../utils/states';
-import styles from '../utils/styles';
+import { fileContentUrl, getImages, Metadata } from '../../utils/services';
+import styles from '../../utils/styles';
+import ImageGrid from './ImageGrid';
 export default function ImageFiles() {
     const [isLoading, setIsLoading] = useState(true);
+    const [initialized, setInitialized] = useState(false);
     const [isError, setIsError] = useState(false);
     const [images, setImages] = useState<ImageObject[]>([]);
+    const [imageData, setImageData] = useState<Metadata[]>([]);
+
     const [galleryOpen, setGalleryOpen] = useState(false);
+    useEffect(() => {
+        if(!initialized) {
+            getImageData(setImageData, setImages, setIsError, setIsLoading);
+            setInitialized(true);
+        }
+    });
+
     const closeGallery = () => setGalleryOpen(false);
     const openGallery = () => setGalleryOpen(true);
-
     const renderHeaderComponent = (_image: ImageObject, _index: number) => {
         return <Button title='Close' onPress={closeGallery} />
     }
-    useEffect(() => {
-        get_file_data_and_update_state<ImageObject>(getImageObjs, setImages, setIsLoading, setIsError);
-    });
+
     if (isLoading) {
         return (
             <View style={styles.container}>
@@ -37,20 +44,25 @@ export default function ImageFiles() {
             <SafeAreaView style={styles.safeArea}>
                 <Button title='Open Gallery' onPress={openGallery}/>
                 <ImageGallery isOpen={galleryOpen} close={closeGallery} images={images} renderHeaderComponent={renderHeaderComponent} />
+                <ImageGrid imageFiles={imageData} />
             </SafeAreaView>
         )
     }
 }
 
-function getImageObjs(): Promise<ImageObject[]> {
-    return new Promise((resolve, reject) => {
-        getImages().then((files: Metadata[]) => {
-            const images = files.map((file: Metadata) => {
-                return { url: fileContentUrl(file)}
-            });
-            resolve(images);
-        }).catch((err) => {
-            reject(err);
-        })
+function getImageData(setImageData: (value: Metadata[]) => void,
+                      setImages: (value: ImageObject[]) => void,
+                      setIsError: (value: boolean) => void,
+                      setIsLoading: (value: boolean) => void) {
+    getImages().then((files: Metadata[]) => {
+        const images = files.map((file: Metadata) => {
+            return { url: fileContentUrl(file)}
+        });
+        setImageData(files);
+        setImages(images);
+    }).catch((_err) => {
+        setIsError(true);
+    }).finally(() => {
+        setIsLoading(false);
     });
 }
