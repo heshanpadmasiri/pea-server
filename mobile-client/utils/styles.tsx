@@ -31,6 +31,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: 'white',
         marginBottom: 10,
+        height: 220,
     },
     thumbnailHeading: {
         flex: 1

@@ -12,6 +12,17 @@ export type VideoBodyProps = {
 
 export default function VideoPlayList(props: VideoBodyProps) {
     const { isLoading, isError, videos } = props;
+    const [thumbnailReady, setThumbnailReady] = useState(new Array(videos.length).fill(false));
+
+    const notifyIthReady = (i: number) => {
+        return () => {
+            console.log("Thumbnail " + i + " is ready!");
+            let newReady = [...thumbnailReady];
+            newReady[i] = true;
+            setThumbnailReady(newReady);
+        }
+    }
+
     if (isLoading) {
         return (
             <View style={styles.container}>
@@ -27,12 +38,12 @@ export default function VideoPlayList(props: VideoBodyProps) {
         )
     }
     else {
-        const data = videos.map((file: Metadata) => {
-            return { key: file.id, fileName: file.name, url: fileContentUrl(file), thumbnailUrl: "https://upload.wikimedia.org/wikipedia/commons/3/3f/Placeholder_view_vector.svg" };
+        const data = videos.map((file: Metadata, index: number) => {
+            return { key: file.id, fileName: file.name, url: fileContentUrl(file), notifyReady: notifyIthReady(index) };
         });
         return (
             <View style={styles.safeArea}>
-                <FlatList data={data} extraData={data} renderItem={({ item }) => <ThumbnailCard fileName={item.fileName} url={item.url} thumbnailUrl={item.thumbnailUrl} />}  />
+                <FlatList data={data} extraData={thumbnailReady} renderItem={({ item }) => <ThumbnailCard fileName={item.fileName} url={item.url} notifyReady={item.notifyReady} />}  />
             </View>
         )
     }
@@ -41,22 +52,22 @@ export default function VideoPlayList(props: VideoBodyProps) {
 type ThumbnailCardProps = {
     fileName: string,
     url: string,
-    thumbnailUrl: string
+    notifyReady: () => void
 }
 
 function ThumbnailCard(props: ThumbnailCardProps) {
-    const { fileName, url, thumbnailUrl } = props;
+    const { fileName, url, notifyReady } = props;
     return (
         <View style={styles.thumbnailCard}>
             <Text style={styles.thumbnailHeading}>{fileName}</Text>
-            <Thumbnail url={url} thumbnailUrl={thumbnailUrl} />
+            <Thumbnail url={url} notifyReady={notifyReady} />
         </View>
     );
 }
 
 type ThumbnailProps = {
     url: string
-    thumbnailUrl: string
+    notifyReady: () => void
 }
 
 const ThumbnailOptions = {
@@ -65,22 +76,25 @@ const ThumbnailOptions = {
 }
 
 function Thumbnail(props: ThumbnailProps) {
-    let { url, thumbnailUrl } = props;
-    const [thumbnail, setThumbnail] = useState(thumbnailUrl);
+    let { url, notifyReady } = props;
+    const [thumbnail, setThumbnail] = useState("");
     const [isError, setIsError] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [initialized, setInitialized] = useState(false);
+    const [unmounted, setUnmounted] = useState(false);
 
     const generateThumbnail = (url: string) => {
         setIsLoading(true);
         VideoThumbnails.getThumbnailAsync(url, ThumbnailOptions)
             .then((result) => {
-                thumbnailUrl = result.uri;
-                setThumbnail(thumbnailUrl);
+                if (!unmounted) {
+                    setThumbnail(result.uri);
+                }
             }).catch((err) => {
                 console.error(err);
                 setIsError(true);
             }).finally(() => {
+                notifyReady();
                 setIsLoading(false)
             });
     }
@@ -89,6 +103,9 @@ function Thumbnail(props: ThumbnailProps) {
         if (!initialized) {
             generateThumbnail(url);
             setInitialized(true)
+        }
+        return () => {
+            setUnmounted(true);
         }
     });
 
