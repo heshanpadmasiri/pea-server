@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import OtherFiles from './Components/OtherFiles';
 import styles from './utils/styles';
-import VideoFiles from './Components/VideoFiles';
+import VideoFiles from './Components/VideoFiles/VideoFiles';
 import ImageFiles from './Components/ImageFiles/ImageFiles';
 import PdfFiles from './Components/PdfFiles';
 
