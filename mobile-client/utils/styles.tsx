@@ -27,6 +27,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
     },
+    thumbnailCard: {
+        alignItems: 'center',
+        backgroundColor: 'white',
+        marginBottom: 10,
+    },
+    thumbnailHeading: {
+        flex: 1
+    },
+    thumbnail: {
+        height: 200,
+        width: 200
+    }
 });
 
 

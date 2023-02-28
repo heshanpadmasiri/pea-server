@@ -3,6 +3,7 @@ import { FlatList, SafeAreaView, Text, View } from 'react-native';
 import { getVideos, getVideosWithTags, Metadata } from '../../utils/services';
 import styles from '../../utils/styles';
 import TagSelector from '../TagSelector';
+import VideoPlayList from './VideoPlayList';
 export default function VideoFiles() {
     const [isLoading, setIsLoading] = useState(true);
     const [isError, setIsError] = useState(false);
@@ -25,7 +26,7 @@ export default function VideoFiles() {
     return (
         <SafeAreaView style={styles.safeArea}>
             <TagSelector updateSelectedTags={updateSelectedTags} selectedTags={selectedTags} />
-            <VideoBody isLoading={isLoading} isError={isError} videos={files} />
+            <VideoPlayList isLoading={isLoading} isError={isError} videos={files} />
         </SafeAreaView>
     )
 
@@ -45,38 +46,4 @@ function getVideosData(selectedTags: string[],
     }).finally(() => {
         setIsLoading(false);
     });
-}
-
-type VideoBodyProps = {
-    isLoading: boolean,
-    isError: boolean,
-    videos: Metadata[]
-}
-
-function VideoBody(props: VideoBodyProps) {
-    const { isLoading, isError, videos } = props;
-    if (isLoading) {
-        return (
-            <View style={styles.container}>
-                <Text>Loading...</Text>
-            </View>
-        );
-    }
-    else if (isError) {
-        return (
-            <View style={styles.container}>
-                <Text>Error!</Text>
-            </View>
-        )
-    }
-    else {
-        const data = videos.map((file: Metadata) => {
-            return { key: file.name };
-        });
-        return (
-            <View style={styles.safeArea}>
-                <FlatList data={data} renderItem={({ item }) => <Text>{item.key}</Text>} />
-            </View>
-        )
-    }
 }
