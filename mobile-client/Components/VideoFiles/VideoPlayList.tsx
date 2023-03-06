@@ -3,7 +3,7 @@ import { FlatList, Image, Text, View } from 'react-native';
 import { fileContentUrl, Metadata } from '../../utils/services';
 import styles from '../../utils/styles';
 import * as VideoThumbnails from 'expo-video-thumbnails';
-import { DataState, MetadataState } from '../../utils/states';
+import { MetadataState } from '../../utils/states';
 
 export type VideoBodyProps = {
     videos: MetadataState
@@ -11,49 +11,46 @@ export type VideoBodyProps = {
 
 export default function VideoPlayList(props: VideoBodyProps) {
     const { videos } = props;
-    const [initialized, setInitialized] = useState(false);
     const [unmounted, setUnmounted] = useState(false);
+    const [loadingThumbnails, setLoadingThumbnails] = useState<ThumbnailCardProps[]>([]);
     const [thumbnails, setThumbnails] = useState<ThumbnailCardProps[]>([]);
-    const [thumbnailCount, setThumbnailCount] = useState(0);
+    const [thumbnailsReady, setThumbnailsReady] = useState(false);
 
     const createThumbnailsInBackground = async () => {
-        console.error("xx");
-        for (let index = 0; index < thumbnails.length; index++) {
-            console.debug(`Start creating thumbnail for ${index}`);
-            const thumbnail = await generateThumbnail(thumbnails[index].url);
-            console.debug(`Done creating thumbnail for ${index}`);
-            const newThumbnails = [...thumbnails];
-            const current = thumbnails[index];
-            console.log(current);
-            const newThumbnail = { thumbnail , key: current.key, fileName: current.fileName, url: current.url };
-            console.log(newThumbnail);
-            newThumbnails[index] = newThumbnail;
+        let renderedThumbnails = [];
+        for (let index = 0; index < loadingThumbnails.length; index++) {
+            const thumbnail = await generateThumbnail(loadingThumbnails[index].url);
+            const newThumbnailProp = { ...loadingThumbnails[index], thumbnail };
+            renderedThumbnails.push(newThumbnailProp);
             if (unmounted) {
                 return;
             }
+            const newThumbnails = [...renderedThumbnails, ...loadingThumbnails.slice(index + 1)];
             setThumbnails(newThumbnails);
-            console.debug(`Done updating state for ${index}`);
+            setThumbnailsReady(true);
         }
     }
 
-    const generateInitialThumbnails = (videos: Metadata[]) => {
-        setThumbnails(videos.map((file: Metadata) => {
-            return { key: file.id, fileName: file.name, url: fileContentUrl(file), thumbnail: AsyncState.loading  };
+    const generateLoadingThumbnails = (videos: Metadata[]) => {
+        setLoadingThumbnails(videos.map((file: Metadata) => {
+            return { key: file.id, fileName: file.name, url: fileContentUrl(file), thumbnail: AsyncState.loading };
         }))
     }
 
     useEffect(() => {
-        if (!initialized) {
-            if (videos == "loading" || videos == "error") {
-                return;
-            }
-            generateInitialThumbnails(videos);
-            setInitialized(true);
-            () => {
-                setUnmounted(true);
-            }
+        if (videos == "loading" || videos == "error") {
+            return;
         }
-    });
+        generateLoadingThumbnails(videos);
+    }, [videos]);
+
+    useEffect(() => {
+        createThumbnailsInBackground();
+        return () => {
+            setUnmounted(true);
+            setThumbnailsReady(false)
+        }
+    }, [loadingThumbnails]);
 
     if (videos == "loading") {
         return (
@@ -69,10 +66,17 @@ export default function VideoPlayList(props: VideoBodyProps) {
             </View>
         )
     }
+    else if (!thumbnailsReady) {
+        return (
+            <View style={styles.safeArea}>
+                <FlatList data={loadingThumbnails} renderItem={({ item }) => <ThumbnailCard key={item.key} fileName={item.fileName} url={item.url} thumbnail={item.thumbnail} />} />
+            </View>
+        )
+    }
     else {
         return (
             <View style={styles.safeArea}>
-                <FlatList extraData={thumbnails} data={thumbnails} renderItem={({ item }) => <ThumbnailCard key={item.key} fileName={item.fileName} url={item.url} thumbnail={item.thumbnail} />}  />
+                <FlatList extraData={thumbnails} data={thumbnails} renderItem={({ item }) => <ThumbnailCard key={item.key} fileName={item.fileName} url={item.url} thumbnail={item.thumbnail} />} />
             </View>
         )
     }
@@ -81,7 +85,7 @@ const generateThumbnail = (url: string): Promise<Thumbnail> => {
     return new Promise((resolve, _) => {
         VideoThumbnails.getThumbnailAsync(url, ThumbnailOptions)
             .then((result) => {
-                resolve({uri: result.uri});
+                resolve({ uri: result.uri });
             }).catch((err) => {
                 resolve(AsyncState.error);
             });
@@ -117,7 +121,7 @@ type ThumbnailProps = {
 }
 
 const ThumbnailOptions = {
-    quality: 0,
+    quality: 0.8,
     time: 1000
 }
 
