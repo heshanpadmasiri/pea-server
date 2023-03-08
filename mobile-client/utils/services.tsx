@@ -82,6 +82,16 @@ export function getVideos(): Promise<Metadata[]> {
     });
 }
 
+export function getVideosWithTags(tags: string[]): Promise<Metadata[]> {
+    return new Promise((resolve, reject) => {
+        axios.post(config.SERVER_URL + "/query", { data: { tags: tags, ty: "mp4" } }).then((res) => {
+            return resolve(res.data);
+        }).catch((err) => {
+            return reject(err);
+        })
+    });
+}
+
 export function isVideo(file: Metadata): boolean {
     return file.ty === "mp4";
 }
