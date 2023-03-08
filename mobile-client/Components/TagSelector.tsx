@@ -10,10 +10,10 @@ export type TagSelectorProps = {
 }
 
 const TagSelector = (props: TagSelectorProps) => {
+    const { selectedTags, updateSelectedTags } = props;
     const [isLoading, setIsLoading] = useState(true);
     const [initialized, setInitialized] = useState(false);
     const [isError, setIsError] = useState(false);
-    const [selectedTags, setSelectedTags] = useState<string[]>(props.selectedTags);
     const [tags, setTags] = useState<string[]>([]);
 
     useEffect(() => {
@@ -23,12 +23,10 @@ const TagSelector = (props: TagSelectorProps) => {
         }
     });
 
-
     const selectorToggleFunction = (tag: string) => {
         return (val: boolean) => {
             const newSelectedTags = !val ? selectedTags.filter((selectedTag) => selectedTag !== tag) : [...selectedTags, tag];
-            setSelectedTags(newSelectedTags);
-            props.updateSelectedTags(newSelectedTags);
+            updateSelectedTags(newSelectedTags);
         }
     }
 
