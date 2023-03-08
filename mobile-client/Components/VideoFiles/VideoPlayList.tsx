@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { FlatList, Image, Text, View } from 'react-native';
+import { FlatList, Image, Text, TouchableHighlight, View } from 'react-native';
 import { fileContentUrl, Metadata } from '../../utils/services';
 import styles from '../../utils/styles';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { MetadataState } from '../../utils/states';
+import { useNavigation } from '@react-navigation/native';
 
 export type VideoBodyProps = {
     videos: MetadataState
@@ -108,11 +109,14 @@ enum AsyncState {
 
 function ThumbnailCard(props: ThumbnailCardProps) {
     const { fileName, url, thumbnail } = props;
+    const navigation = useNavigation();
     return (
-        <View style={styles.thumbnailCard}>
-            <Text style={styles.thumbnailHeading}>{fileName}</Text>
-            <Thumbnail thumbnail={thumbnail} />
-        </View>
+        <TouchableHighlight onPress={() => {navigation.navigate('Player', {url});}}>
+            <View style={styles.thumbnailCard}>
+                <Text style={styles.thumbnailHeading}>{fileName}</Text>
+                <Thumbnail thumbnail={thumbnail} />
+            </View>
+        </TouchableHighlight>
     );
 }
 
