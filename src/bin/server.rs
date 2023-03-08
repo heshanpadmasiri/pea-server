@@ -26,7 +26,7 @@ struct ServerState {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    simple_logger::SimpleLogger::new().init().unwrap();
+    simple_logger::SimpleLogger::new().with_level(log::LevelFilter::Info).init().unwrap();
     let discovery_enable = std::env::args().any(|each| each == "--discovery");
     let index_path = std::env::args()
         .nth(1)
