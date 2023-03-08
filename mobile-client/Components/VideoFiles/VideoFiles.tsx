@@ -1,8 +1,8 @@
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createNativeStackNavigator, NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Video } from 'expo-av';
 import React, { useEffect, useState } from 'react';
-import { Button, Dimensions, SafeAreaView, View } from 'react-native';
+import { SafeAreaView, View } from 'react-native';
 import { getVideos, getVideosWithTags } from '../../utils/services';
 import { AsyncState, MetadataState } from '../../utils/states';
 import * as ScreenOrientation from 'expo-screen-orientation';
@@ -10,8 +10,13 @@ import styles from '../../utils/styles';
 import TagSelector from '../TagSelector';
 import VideoPlayList from './VideoPlayList';
 
+export type VideoRouteParamList = {
+    Selector: undefined;
+    Player: { url: string };
+}
+
 export default function VideoFiles() {
-    const Stack = createNativeStackNavigator();
+    const Stack = createNativeStackNavigator<VideoRouteParamList>();
     return (
         <NavigationContainer independent={true}>
             <Stack.Navigator>
@@ -47,8 +52,10 @@ function VideoSelector() {
     )
 }
 
-function VideoPlayer({ route }) {
-    const uri = route.params.url;
+type VideoPlayerProps = NativeStackScreenProps<VideoRouteParamList, 'Player'>;
+
+function VideoPlayer(props: VideoPlayerProps) {
+    const uri = props.route.params.url;
     const video = React.useRef(null);
     const setOrientation = () => {
           ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
@@ -65,7 +72,6 @@ function VideoPlayer({ route }) {
                 isLooping
                 onFullscreenUpdate={setOrientation}
             />
-            <Button title="Download"/>
         </View>
     );
 }

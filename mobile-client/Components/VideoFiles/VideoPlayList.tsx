@@ -5,6 +5,8 @@ import styles from '../../utils/styles';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { MetadataState } from '../../utils/states';
 import { useNavigation } from '@react-navigation/native';
+import { VideoRouteParamList } from './VideoFiles';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 export type VideoBodyProps = {
     videos: MetadataState
@@ -87,7 +89,7 @@ const generateThumbnail = (url: string): Promise<Thumbnail> => {
         VideoThumbnails.getThumbnailAsync(url, ThumbnailOptions)
             .then((result) => {
                 resolve({ uri: result.uri });
-            }).catch((err) => {
+            }).catch((_) => {
                 resolve(AsyncState.error);
             });
 
@@ -107,9 +109,11 @@ enum AsyncState {
     error = "error"
 };
 
+type NavigationType = NativeStackScreenProps<VideoRouteParamList, 'Selector'>['navigation'];
+
 function ThumbnailCard(props: ThumbnailCardProps) {
     const { fileName, url, thumbnail } = props;
-    const navigation = useNavigation();
+    const navigation = useNavigation<NavigationType>();
     return (
         <TouchableHighlight onPress={() => {navigation.navigate('Player', {url});}}>
             <View style={styles.thumbnailCard}>
