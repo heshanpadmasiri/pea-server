@@ -2,9 +2,10 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Video } from 'expo-av';
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View } from 'react-native';
+import { Button, Dimensions, SafeAreaView, View } from 'react-native';
 import { getVideos, getVideosWithTags } from '../../utils/services';
 import { AsyncState, MetadataState } from '../../utils/states';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import styles from '../../utils/styles';
 import TagSelector from '../TagSelector';
 import VideoPlayList from './VideoPlayList';
@@ -49,6 +50,9 @@ function VideoSelector() {
 function VideoPlayer({ route }) {
     const uri = route.params.url;
     const video = React.useRef(null);
+    const setOrientation = () => {
+          ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+    }
     return (
         <View style={styles.container}>
             <Video
@@ -58,9 +62,10 @@ function VideoPlayer({ route }) {
                     uri,
                 }}
                 useNativeControls
-                resizeMode="contain"
                 isLooping
+                onFullscreenUpdate={setOrientation}
             />
+            <Button title="Download"/>
         </View>
     );
 }
