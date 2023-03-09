@@ -89,7 +89,8 @@ const generateThumbnail = (url: string): Promise<Thumbnail> => {
         VideoThumbnails.getThumbnailAsync(url, ThumbnailOptions)
             .then((result) => {
                 resolve({ uri: result.uri });
-            }).catch((_) => {
+            }).catch((err) => {
+                console.error(err);
                 resolve(AsyncState.error);
             });
 
