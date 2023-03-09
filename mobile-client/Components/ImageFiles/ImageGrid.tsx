@@ -8,20 +8,20 @@ export type ImageGridProps = {
 
 const ImageGrid = (props: ImageGridProps) => {
     const { imageFiles } = props;
-    const [isFullScreen, setIsFullScreen] = useState(false);
-    const [fullScreenIndex, setFullScreenIndex] = useState(0);
-    const [fullScreenX, setFullScreenX] = useState(0);
+    const [isSlideShow, setIsSlideShow] = useState(false);
+    const [slideShowIndex, setSlideShowIndex] = useState(0);
+    const [lastTouchX, setLastTouchX] = useState(0);
 
     const maxWidth = Dimensions.get('window').width;
     const maxHeight = Dimensions.get('window').height;
 
     const showFullScreenCallback = (index: number) => {
         return () => {
-            if (isFullScreen) {
+            if (isSlideShow) {
                 return;
             }
-            setFullScreenIndex(index);
-            setIsFullScreen(true);
+            setSlideShowIndex(index);
+            setIsSlideShow(true);
         }
     }
 
@@ -32,34 +32,48 @@ const ImageGrid = (props: ImageGridProps) => {
             maxWidth
         }
     });
+
+    useEffect(() => {
+        if (!isSlideShow) {
+            return;
+        }
+        const startIndex = slideShowIndex;
+        setTimeout(() => {
+            if (slideShowIndex != startIndex) {
+                return;
+            }
+            setSlideShowIndex((slideShowIndex + 1) % imageFiles.length);
+        }, 60000);
+    }, [slideShowIndex]);
+
     return (
         <View style={{ flex: 5 }}>
             <Modal
                 animationType="slide"
                 transparent={false}
                 statusBarTranslucent={true}
-                visible={isFullScreen}
+                visible={isSlideShow}
                 onRequestClose={() => {
-                    setIsFullScreen(false);
+                    setIsSlideShow(false);
                 }}>
-                <View style={{backgroundColor: "black"}}>
+                <View style={{ backgroundColor: "black" }}>
                     <Pressable
-                        onLongPress={() => { setIsFullScreen(false); }}
-                        onPressIn={(event) => { setFullScreenX(event.nativeEvent.locationX); }}
+                        onLongPress={() => { setIsSlideShow(false); }}
+                        onPressIn={(event) => { setLastTouchX(event.nativeEvent.locationX); }}
                         onPressOut={(event) => {
-                            const diff = event.nativeEvent.locationX - fullScreenX;
+                            const diff = event.nativeEvent.locationX - lastTouchX;
                             if (diff > 50) {
-                                setFullScreenIndex((fullScreenIndex + 1) % imageFiles.length);
+                                setSlideShowIndex((slideShowIndex + 1) % imageFiles.length);
                             }
                             else if (diff < -50) {
-                                setFullScreenIndex((fullScreenIndex - 1 + imageFiles.length) % imageFiles.length);
+                                setSlideShowIndex((slideShowIndex - 1 + imageFiles.length) % imageFiles.length);
                             }
                             else {
-                                setFullScreenX(event.nativeEvent.locationX);
+                                setLastTouchX(event.nativeEvent.locationX);
                             }
                         }}
                     >
-                        <SlideShow imageFile={imageFiles[fullScreenIndex]} maxHeight={maxHeight} maxWidth={maxWidth} />
+                        <SlideShow imageFile={imageFiles[slideShowIndex]} maxHeight={maxHeight} maxWidth={maxWidth} />
                     </Pressable>
                 </View>
             </Modal>
@@ -105,17 +119,11 @@ type SlideShowProps = {
 }
 
 function SlideShow(props: SlideShowProps) {
-    const [width, setWidth] = useState(300);
-    const [height, setHeight] = useState(300);
-    const uri = fileContentUrl(props.imageFile);
-
-    Image.getSize(uri, (width, height) => {
-        setWidth(Math.min(width, props.maxWidth));
-        setHeight(Math.min(height, props.maxHeight));
-    });
+    const { imageFile, maxWidth: width, maxHeight: height } = props;
+    const uri = fileContentUrl(imageFile);
 
     return (
-        <Image style={{ height, width, resizeMode: "center" }} source={{ uri }} />
+        <Image style={{ height, width, resizeMode: "contain" }} source={{ uri }} />
     );
 }
 
