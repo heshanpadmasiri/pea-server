@@ -56,12 +56,12 @@ type VideoPlayerProps = NativeStackScreenProps<VideoRouteParamList, 'Player'>;
 
 function VideoPlayer(props: VideoPlayerProps) {
     const uri = props.route.params.url;
-    const video = React.useRef(null);
+    const video = React.useRef<Video>(null);
+    video.current?.presentFullscreenPlayer();
     const setOrientation = () => {
         ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
     }
     return (
-        <View style={styles.container}>
             <Video
                 ref={video}
                 style={styles.video}
@@ -71,8 +71,8 @@ function VideoPlayer(props: VideoPlayerProps) {
                 useNativeControls
                 isLooping
                 onFullscreenUpdate={setOrientation}
+                onReadyForDisplay={() => {video.current?.presentFullscreenPlayer(); }}
             />
-        </View>
     );
 }
 
