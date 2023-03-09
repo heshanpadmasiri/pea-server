@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, FlatList, Image, TouchableOpacity, Text, Modal, Alert, Button, Pressable } from "react-native";
+import { View, FlatList, Image, TouchableOpacity, Text, Modal, Alert, Button, Pressable, Dimensions } from "react-native";
 import { fileContentUrl, Metadata } from "../../utils/services"
 
 export type ImageGridProps = {
@@ -10,6 +10,10 @@ const ImageGrid = (props: ImageGridProps) => {
     const { imageFiles } = props;
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [fullScreenIndex, setFullScreenIndex] = useState(0);
+    const [fullScreenX, setFullScreenX] = useState(0);
+
+    const maxWidth = Dimensions.get('window').width;
+    const maxHeight = Dimensions.get('window').height;
 
     const showFullScreenCallback = (index: number) => {
         return () => {
@@ -29,20 +33,32 @@ const ImageGrid = (props: ImageGridProps) => {
         return {
             uri: fileContentUrl(each),
             showFullScreen: showFullScreenCallback(index),
+            maxWidth
         }
     });
     return (
         <View style={{ flex: 5 }}>
             <Modal
                 animationType="slide"
-                transparent={false}
+                transparent={true}
+                statusBarTranslucent={false}
                 visible={isFullScreen}
                 onRequestClose={() => {
                     setIsFullScreen(false);
                 }}>
                 <View>
-                    <Pressable onLongPress={() => {setIsFullScreen(false);}}>
-                        <SlideShow imageFiles={imageFiles} staringIndex={fullScreenIndex} />
+                    <Pressable
+                        onLongPress={() => { setIsFullScreen(false); }}
+                        onPressIn={(event: any) => { setFullScreenX(event.locationX); }}
+                        onPressOut={(event: any) => {
+                            if (event.locationX > fullScreenX) {
+                                setFullScreenIndex((fullScreenIndex + 1) % imageFiles.length);
+                            } else {
+                                setFullScreenIndex((fullScreenIndex - 1 + imageFiles.length) % imageFiles.length);
+                            }
+                        }}
+                    >
+                        <SlideShow imageFile={imageFiles[fullScreenIndex]} maxHeight={maxHeight} maxWidth={maxWidth} />
                     </Pressable>
                 </View>
             </Modal>
@@ -60,14 +76,15 @@ const ImageGrid = (props: ImageGridProps) => {
 type ImageProps = {
     uri: string,
     showFullScreen: () => void,
+    maxWidth: number;
 }
 
 function GridImage(props: ImageProps) {
-    const { uri, showFullScreen } = props;
+    const { uri, showFullScreen, maxWidth } = props;
     const [width, setWidth] = useState(300);
     const [height, setHeight] = useState(300);
     Image.getSize(uri, (width, height) => {
-        setWidth(width);
+        setWidth(Math.min(width, maxWidth));
         setHeight(height);
     });
     return (
@@ -81,30 +98,23 @@ function GridImage(props: ImageProps) {
 }
 
 type SlideShowProps = {
-    imageFiles: Metadata[];
-    staringIndex: number;
+    imageFile: Metadata;
+    maxWidth: number;
+    maxHeight: number;
 }
 
 function SlideShow(props: SlideShowProps) {
     const [width, setWidth] = useState(300);
     const [height, setHeight] = useState(300);
-    const [image, setImage] = useState(props.imageFiles[props.staringIndex]);
-    const [uri, setUri] = useState(fileContentUrl(image));
-    useEffect(() => {
-        setUri(fileContentUrl(image));
-    }, [image]);
+    const uri = fileContentUrl(props.imageFile);
 
-    useEffect(() => {
-        Image.getSize(uri, (width, height) => {
-            setWidth(width);
-            setHeight(height);
-        });
-    }, [uri]);
+    Image.getSize(uri, (width, height) => {
+        setWidth(Math.min(width, props.maxWidth));
+        setHeight(Math.min(height, props.maxHeight));
+    });
+
     return (
-        <View style={{ flex: 1, alignSelf: "center" }} key={image.id}>
-            <Image style={{ height, width }} source={{ uri }} />
-        </View>
-
+        <Image style={{ height, width, resizeMode: "center" }} source={{ uri }} />
     );
 }
 
