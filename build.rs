@@ -6,9 +6,8 @@ use std::{
 
 fn main() {
     let client_content_dir = PathBuf::from("./client-content");
-    let client_src_root = PathBuf::from("./pea-client");
     let client_config_paths = [
-        client_src_root.join("src/config.json"),
+        PathBuf::from("./pea-client/config.json"),
         PathBuf::from("./mobile-client/config.json"),
     ];
     if Ok("release".to_owned()) == std::env::var("PROFILE") {
@@ -16,7 +15,7 @@ fn main() {
             create_server_config(&each);
         }
         clean_and_create_dir(&client_content_dir);
-        create_and_copy_static_page(&client_src_root, &client_content_dir)
+        create_and_copy_static_page(&PathBuf::from("./mobile-client"), &client_content_dir)
     }
 }
 
@@ -29,12 +28,12 @@ fn clean_and_create_dir(dir_name: &Path) {
 }
 
 fn create_and_copy_static_page(src: &Path, dest: &Path) {
-    Command::new("npm")
-        .args(["run", "build"])
+    Command::new("npx")
+        .args(["expo", "export:web"])
         .current_dir(src)
         .status()
         .unwrap();
-    let src_artifact = src.join("build/");
+    let src_artifact = src.join("web-build/");
     Command::new("cp")
         .args([
             "-r",
