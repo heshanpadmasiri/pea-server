@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 const styles = StyleSheet.create({
     safeArea: {
-        flex: 2,
+        flex: 5,
         paddingHorizontal: 10,
     },
     gallery: {
@@ -12,8 +12,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
     },
     grid_image: {
-        height: 100,
-        width: 100
+        height: 300,
+        width: 300,
+        resizeMode:'contain',
     },
     tag_selector: {
         flex: 1,

@@ -1,6 +1,6 @@
-import { View, Text, FlatList, Image, ScrollView } from "react-native";
+import { useState } from "react";
+import { View, FlatList, Image } from "react-native";
 import { fileContentUrl, Metadata } from "../../utils/services"
-import styles from "../../utils/styles";
 
 export type ImageGridProps = {
     imageFiles: Metadata[];
@@ -9,22 +9,35 @@ export type ImageGridProps = {
 const ImageGrid = (props: ImageGridProps) => {
     const { imageFiles } = props;
     return (
+        <View style={{flex: 5}}>
             <FlatList
-                contentContainerStyle={{ alignSelf: 'flex-start' }}
-                numColumns={4}
                 showsVerticalScrollIndicator={false}
-                showsHorizontalScrollIndicator={false} data={imageFiles}
-                renderItem={({ item }) => imageGridItem(item)}
+                showsHorizontalScrollIndicator={false}
+                data={imageFiles}
+                renderItem={({ item }) => <GridImage uri={fileContentUrl(item)} />}
                 keyExtractor={item => item.id}
             />
+        </View>
     )
 }
 
-const imageGridItem = (file: Metadata) => {
+type ImageProps = {
+    uri: string,
+}
+
+function GridImage(props: ImageProps) {
+    const { uri } = props;
+    const [width, setWidth] = useState(300);
+    const [height, setHeight] = useState(300);
+    Image.getSize(uri, (width, height) => {
+        setWidth(width);
+        setHeight(height);
+    });
     return (
-        <View key={file.id}>
-            <Image style={styles.grid_image} source={{ uri: fileContentUrl(file) }} />
+        <View style={{ flex: 1, alignSelf: "center" }} key={uri}>
+            <Image style={{ height, width }} source={{ uri }}/>
         </View>
+
     );
 }
 
