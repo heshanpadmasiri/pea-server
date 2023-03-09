@@ -25,10 +25,6 @@ const ImageGrid = (props: ImageGridProps) => {
         }
     }
 
-    useEffect(() => {
-        console.log({ isFullScreen, fullScreenIndex });
-    }, [isFullScreen, fullScreenIndex]);
-
     const imageProps = imageFiles.map((each, index) => {
         return {
             uri: fileContentUrl(each),
@@ -40,21 +36,26 @@ const ImageGrid = (props: ImageGridProps) => {
         <View style={{ flex: 5 }}>
             <Modal
                 animationType="slide"
-                transparent={true}
-                statusBarTranslucent={false}
+                transparent={false}
+                statusBarTranslucent={true}
                 visible={isFullScreen}
                 onRequestClose={() => {
                     setIsFullScreen(false);
                 }}>
-                <View>
+                <View style={{backgroundColor: "black"}}>
                     <Pressable
                         onLongPress={() => { setIsFullScreen(false); }}
-                        onPressIn={(event: any) => { setFullScreenX(event.locationX); }}
-                        onPressOut={(event: any) => {
-                            if (event.locationX > fullScreenX) {
+                        onPressIn={(event) => { setFullScreenX(event.nativeEvent.locationX); }}
+                        onPressOut={(event) => {
+                            const diff = event.nativeEvent.locationX - fullScreenX;
+                            if (diff > 50) {
                                 setFullScreenIndex((fullScreenIndex + 1) % imageFiles.length);
-                            } else {
+                            }
+                            else if (diff < -50) {
                                 setFullScreenIndex((fullScreenIndex - 1 + imageFiles.length) % imageFiles.length);
+                            }
+                            else {
+                                setFullScreenX(event.nativeEvent.locationX);
                             }
                         }}
                     >
