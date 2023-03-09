@@ -13,7 +13,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <View style={styles.container}>
-        <Tab.Navigator initialRouteName="Videos" screenOptions={({ route }) => ({
+        <Tab.Navigator initialRouteName="Images" screenOptions={({ route }) => ({
             tabBarIcon: ({ focused, color, size }) => {
                 let iconName;
                 if (route.name === 'Videos') {
