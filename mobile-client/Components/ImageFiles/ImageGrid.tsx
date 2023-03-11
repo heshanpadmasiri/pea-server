@@ -17,8 +17,6 @@ const ImageGrid = () => {
     const maxWidth = Dimensions.get('window').width;
     const maxHeight = Dimensions.get('window').height;
 
-
-
     let content;
     if (resultArray.some((each) => each.isLoading)) {
         content = (<Text>Loading...</Text>);

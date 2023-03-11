@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { View, Text, Switch, ScrollView } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { tagSelectorInitialized } from "../utils/componentSlice";
@@ -18,6 +18,14 @@ const TagSelector = () => {
         }
     }, [intialized]);
 
+    const tags = result.data;
+    const sortedTags = useMemo(() => {
+        const sortedTags = tags?.slice()
+        // Sort posts in descending chronological order
+        sortedTags?.sort()
+        return sortedTags
+    }, [tags])
+
     let content;
 
     if (result.isLoading) {
@@ -28,7 +36,7 @@ const TagSelector = () => {
         content = (<Text>Error!</Text>);
     }
     else if (result.isSuccess) {
-        const selectors = result.data.map((tag) => {
+        const selectors = sortedTags?.map((tag) => {
             return (
                 <Selector
                     key={tag}
@@ -36,7 +44,7 @@ const TagSelector = () => {
                 />
             )
         })
-        content =  (<ScrollView style={styles.tag_selector}>{selectors}</ScrollView>);
+        content = (<ScrollView style={styles.tag_selector}>{selectors}</ScrollView>);
     }
     return (
         <View style={styles.container}>
