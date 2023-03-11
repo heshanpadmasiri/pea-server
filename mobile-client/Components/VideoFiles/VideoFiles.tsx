@@ -1,14 +1,12 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator, NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Video } from 'expo-av';
-import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View } from 'react-native';
-import { getVideos, getVideosWithTags } from '../../utils/services';
-import { AsyncState, MetadataState } from '../../utils/states';
+import { SafeAreaView } from 'react-native';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import styles from '../../utils/styles';
 import TagSelector from '../TagSelector';
 import VideoPlayList from './VideoPlayList';
+import React from 'react';
 
 export type VideoRouteParamList = {
     Selector: undefined;
@@ -28,21 +26,10 @@ export default function VideoFiles() {
 }
 
 function VideoSelector() {
-    const [files, setFiles] = useState<MetadataState>(AsyncState.loading);
-    const [initialized, setInitialized] = useState(false);
-    const [selectedTags, setSelectedTags] = useState<string[]>([]);
-
-    useEffect(() => {
-        if (!initialized) {
-            getVideosData(selectedTags, setFiles);
-            setInitialized(true)
-        }
-    });
-
     return (
         <SafeAreaView style={styles.safeArea}>
             <TagSelector/>
-            <VideoPlayList videos={files} />
+            <VideoPlayList/>
         </SafeAreaView>
     )
 }
@@ -69,16 +56,4 @@ function VideoPlayer(props: VideoPlayerProps) {
                 onReadyForDisplay={() => {video.current?.presentFullscreenPlayer(); }}
             />
     );
-}
-
-function getVideosData(selectedTags: string[],
-    setFiles: (state: MetadataState) => void) {
-    setFiles(AsyncState.loading);
-    const getter = selectedTags.length > 0 ? getVideosWithTags(selectedTags) : getVideos();
-    getter.then((files) => {
-        setFiles(files);
-    }).catch((err) => {
-        console.error(err);
-        setFiles(AsyncState.error);
-    });
 }

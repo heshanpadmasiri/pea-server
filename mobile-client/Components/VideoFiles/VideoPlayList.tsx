@@ -1,89 +1,60 @@
-import { useEffect, useState } from 'react';
 import { FlatList, Image, Text, TouchableHighlight, View } from 'react-native';
 import { fileContentUrl, Metadata } from '../../utils/services';
 import styles from '../../utils/styles';
 import * as VideoThumbnails from 'expo-video-thumbnails';
-import { MetadataState } from '../../utils/states';
+import { AsyncState } from '../../utils/states';
 import { useNavigation } from '@react-navigation/native';
 import { VideoRouteParamList } from './VideoFiles';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useGetFilesByTypeQuery } from '../../utils/apiSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../utils/store';
+import { initializeThumbnailProps, Thumbnail, updateThumbnailProp } from '../../utils/videoSlice';
 
-export type VideoBodyProps = {
-    videos: MetadataState
-}
+export default function VideoPlayList() {
+    const result = useGetFilesByTypeQuery("mp4");
+    const thumbnailProps = useSelector((state: RootState) => state.video.thumbnailProps);
+    const initialized = useSelector((state: RootState) => state.video.initialized);
 
-export default function VideoPlayList(props: VideoBodyProps) {
-    const { videos } = props;
-    const [unmounted, setUnmounted] = useState(false);
-    const [loadingThumbnails, setLoadingThumbnails] = useState<ThumbnailCardProps[]>([]);
-    const [thumbnails, setThumbnails] = useState<ThumbnailCardProps[]>([]);
-    const [thumbnailsReady, setThumbnailsReady] = useState(false);
+    const dispatch = useDispatch();
 
-    const createThumbnailsInBackground = async () => {
-        let renderedThumbnails = [];
-        for (let index = 0; index < loadingThumbnails.length; index++) {
-            const thumbnail = await generateThumbnail(loadingThumbnails[index].url);
-            const newThumbnailProp = { ...loadingThumbnails[index], thumbnail };
-            renderedThumbnails.push(newThumbnailProp);
-            if (unmounted) {
-                return;
-            }
-            const newThumbnails = [...renderedThumbnails, ...loadingThumbnails.slice(index + 1)];
-            setThumbnails(newThumbnails);
-            setThumbnailsReady(true);
-        }
-    }
-
-    const generateLoadingThumbnails = (videos: Metadata[]) => {
-        setLoadingThumbnails(videos.map((file: Metadata) => {
-            return { key: file.id, fileName: file.name, url: fileContentUrl(file), thumbnail: AsyncState.loading };
-        }))
-    }
-
-    useEffect(() => {
-        if (videos == "loading" || videos == "error") {
-            return;
-        }
-        generateLoadingThumbnails(videos);
-    }, [videos]);
-
-    useEffect(() => {
-        createThumbnailsInBackground();
-        return () => {
-            setUnmounted(true);
-            setThumbnailsReady(false)
-        }
-    }, [loadingThumbnails]);
-
-    if (videos == "loading") {
-        return (
-            <View style={styles.container}>
-                <Text>Loading...</Text>
-            </View>
+    let content;
+    if (result.isLoading) {
+        content = (
+            <Text>Loading...</Text>
         );
     }
-    else if (videos == "error") {
-        return (
-            <View style={styles.container}>
-                <Text>Error!</Text>
-            </View>
+    else if (result.isError) {
+        console.error(result.error);
+        content = (
+            <Text>Error!</Text>
         )
     }
-    else if (!thumbnailsReady) {
-        return (
-            <View style={styles.safeArea}>
-                <FlatList data={loadingThumbnails} renderItem={({ item }) => <ThumbnailCard key={item.key} fileName={item.fileName} url={item.url} thumbnail={item.thumbnail} />} />
-            </View>
+    else if (result.isSuccess) {
+        if (!initialized) {
+            const thumbnails = result.data.map((file: Metadata, index: number) => {
+                return {
+                    index,
+                    id: file.id,
+                    url: fileContentUrl(file),
+                    thumbnail: AsyncState.loading,
+                    title: file.name,
+                }
+            });
+            dispatch(initializeThumbnailProps(thumbnails));
+        }
+        content = (
+            <FlatList data={thumbnailProps} renderItem={({ item }) => <ThumbnailCard {...item} />} />
         )
     }
-    else {
-        return (
-            <View style={styles.safeArea}>
-                <FlatList extraData={thumbnails} data={thumbnails} renderItem={({ item }) => <ThumbnailCard key={item.key} fileName={item.fileName} url={item.url} thumbnail={item.thumbnail} />} />
-            </View>
-        )
-    }
+    return (
+        <View style={styles.safeArea}>
+            {content}
+        </View>
+    )
 }
+
+
 const generateThumbnail = (url: string): Promise<Thumbnail> => {
     return new Promise((resolve, _) => {
         VideoThumbnails.getThumbnailAsync(url, ThumbnailOptions)
@@ -98,35 +69,33 @@ const generateThumbnail = (url: string): Promise<Thumbnail> => {
 }
 
 type ThumbnailCardProps = {
-    fileName: string,
+    index: number;
+    title: string
     url: string,
-    thumbnail: Thumbnail,
-    key: string,
-}
-
-type Thumbnail = AsyncState | { uri: string }
-enum AsyncState {
-    loading = "loading",
-    error = "error"
+    thumbnail: Thumbnail
 };
 
 type NavigationType = NativeStackScreenProps<VideoRouteParamList, 'Selector'>['navigation'];
 
 function ThumbnailCard(props: ThumbnailCardProps) {
-    const { fileName, url, thumbnail } = props;
+    const dispatch = useDispatch();
+    const { index, title, url } = props;
     const navigation = useNavigation<NavigationType>();
+
+    if (props.thumbnail == AsyncState.loading) {
+        generateThumbnail(url).then((thumbnail) => {
+            dispatch(updateThumbnailProp({ index, thumbnail }));
+        });
+    }
+
     return (
         <TouchableHighlight onPress={() => {navigation.navigate('Player', {url});}}>
             <View style={styles.thumbnailCard}>
-                <Text style={styles.thumbnailHeading}>{fileName}</Text>
-                <Thumbnail thumbnail={thumbnail} />
+                <Text style={styles.thumbnailHeading}>{title}</Text>
+                <ThumbnailImage {...props} />
             </View>
         </TouchableHighlight>
     );
-}
-
-type ThumbnailProps = {
-    thumbnail: Thumbnail
 }
 
 const ThumbnailOptions = {
@@ -134,16 +103,20 @@ const ThumbnailOptions = {
     time: 1000
 }
 
-function Thumbnail(props: ThumbnailProps) {
+type ThumbnailImageProps = {
+    thumbnail: Thumbnail
+}
+
+function ThumbnailImage(props: ThumbnailImageProps) {
     let { thumbnail } = props;
-    if (thumbnail == "loading") {
+    if (thumbnail == AsyncState.loading) {
         return (
             <View>
                 <Text>Loading...</Text>
             </View>
         )
     }
-    else if (thumbnail == "error") {
+    else if (thumbnail == AsyncState.error) {
         return (
             <View>
                 <Text>Error loading thumbnail!</Text>
