@@ -1,13 +1,12 @@
-import { useEffect, useState } from "react";
-import { View, FlatList, Image, TouchableOpacity, Text, Modal, Alert, Button, Pressable, Dimensions } from "react-native";
+import { useState } from "react";
+import { View, FlatList, Image, TouchableOpacity, Text, Modal, Pressable, Dimensions } from "react-native";
 import { fileContentUrl, Metadata } from "../../utils/services"
+import { useGetFilesByTypeQuery } from "../../utils/apiSlice";
 
-export type ImageGridProps = {
-    imageFiles: Metadata[];
-}
-
-const ImageGrid = (props: ImageGridProps) => {
-    const { imageFiles } = props;
+const ImageGrid = () => {
+    // TODO: have a array of files
+    const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "bmp", "tiff", "tif", "svg", "webp"];
+    const resultArray = IMAGE_TYPES.map((each) => { return useGetFilesByTypeQuery(each); });
     const [isSlideShow, setIsSlideShow] = useState(false);
     const [slideShowIndex, setSlideShowIndex] = useState(0);
     const [lastTouchX, setLastTouchX] = useState(0);
@@ -24,66 +23,87 @@ const ImageGrid = (props: ImageGridProps) => {
             setIsSlideShow(true);
         }
     }
-
-    const imageProps = imageFiles.map((each, index) => {
-        return {
-            uri: fileContentUrl(each),
-            showFullScreen: showFullScreenCallback(index),
-            maxWidth
-        }
-    });
-
-    useEffect(() => {
-        if (!isSlideShow) {
-            return;
-        }
-        const startIndex = slideShowIndex;
-        setTimeout(() => {
-            if (slideShowIndex != startIndex) {
-                return;
+    let content;
+    if (resultArray.some((each) => each.isLoading)) {
+        content = (<Text>Loading...</Text>);
+    }
+    else if (resultArray.some((each) => each.isError)) {
+        content = (<Text>Error</Text>);
+    }
+    else if (resultArray.every((each) => each.isSuccess)) {
+        const imageFiles = resultArray.reduce((acc, each) => {
+            // I don't think this can ever happen
+            if (each.data == undefined) {
+                return acc;
             }
-            setSlideShowIndex((slideShowIndex + 1) % imageFiles.length);
-        }, 60000);
-    }, [slideShowIndex]);
+            return acc.concat(each.data);
+        }, [] as Metadata[])
+        const imageProps = imageFiles.map((each, index) => {
+            return {
+                uri: fileContentUrl(each),
+                showFullScreen: showFullScreenCallback(index),
+                maxWidth
+            }
+        });
+
+        content = (
+            <View>
+                <Modal
+                    animationType="slide"
+                    transparent={false}
+                    statusBarTranslucent={true}
+                    visible={isSlideShow}
+                    onRequestClose={() => {
+                        setIsSlideShow(false);
+                    }}>
+                    <View style={{ backgroundColor: "black" }}>
+                        <Pressable
+                            onLongPress={() => { setIsSlideShow(false); }}
+                            onPressIn={(event) => { setLastTouchX(event.nativeEvent.locationX); }}
+                            onPressOut={(event) => {
+                                const diff = event.nativeEvent.locationX - lastTouchX;
+                                if (diff > 50) {
+                                    setSlideShowIndex((slideShowIndex + 1) % imageFiles.length);
+                                }
+                                else if (diff < -50) {
+                                    setSlideShowIndex((slideShowIndex - 1 + imageFiles.length) % imageFiles.length);
+                                }
+                                else {
+                                    setLastTouchX(event.nativeEvent.locationX);
+                                }
+                            }}
+                        >
+                            <SlideShow imageFile={imageFiles[slideShowIndex]} maxHeight={maxHeight} maxWidth={maxWidth} />
+                        </Pressable>
+                    </View>
+                </Modal>
+                <FlatList
+                    showsVerticalScrollIndicator={false}
+                    showsHorizontalScrollIndicator={false}
+                    data={imageProps}
+                    renderItem={({ item }) => <GridImage {...item} />}
+                    keyExtractor={item => item.uri}
+                />
+            </View>
+        )
+    }
+
+    // useEffect(() => {
+    //     if (!isSlideShow) {
+    //         return;
+    //     }
+    //     const startIndex = slideShowIndex;
+    //     setTimeout(() => {
+    //         if (slideShowIndex != startIndex) {
+    //             return;
+    //         }
+    //         setSlideShowIndex((slideShowIndex + 1) % imageFiles.length);
+    //     }, 60000);
+    // }, [slideShowIndex]);
 
     return (
         <View style={{ flex: 5 }}>
-            <Modal
-                animationType="slide"
-                transparent={false}
-                statusBarTranslucent={true}
-                visible={isSlideShow}
-                onRequestClose={() => {
-                    setIsSlideShow(false);
-                }}>
-                <View style={{ backgroundColor: "black" }}>
-                    <Pressable
-                        onLongPress={() => { setIsSlideShow(false); }}
-                        onPressIn={(event) => { setLastTouchX(event.nativeEvent.locationX); }}
-                        onPressOut={(event) => {
-                            const diff = event.nativeEvent.locationX - lastTouchX;
-                            if (diff > 50) {
-                                setSlideShowIndex((slideShowIndex + 1) % imageFiles.length);
-                            }
-                            else if (diff < -50) {
-                                setSlideShowIndex((slideShowIndex - 1 + imageFiles.length) % imageFiles.length);
-                            }
-                            else {
-                                setLastTouchX(event.nativeEvent.locationX);
-                            }
-                        }}
-                    >
-                        <SlideShow imageFile={imageFiles[slideShowIndex]} maxHeight={maxHeight} maxWidth={maxWidth} />
-                    </Pressable>
-                </View>
-            </Modal>
-            <FlatList
-                showsVerticalScrollIndicator={false}
-                showsHorizontalScrollIndicator={false}
-                data={imageProps}
-                renderItem={({ item }) => <GridImage {...item} />}
-                keyExtractor={item => item.uri}
-            />
+            {content}
         </View>
     )
 }

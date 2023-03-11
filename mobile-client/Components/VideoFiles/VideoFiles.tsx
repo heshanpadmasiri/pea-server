@@ -39,14 +39,9 @@ function VideoSelector() {
         }
     });
 
-    const updateSelectedTags = (tags: string[]) => {
-        setSelectedTags(tags)
-        getVideosData(tags, setFiles);
-    };
-
     return (
         <SafeAreaView style={styles.safeArea}>
-            <TagSelector updateSelectedTags={updateSelectedTags} selectedTags={selectedTags} />
+            <TagSelector/>
             <VideoPlayList videos={files} />
         </SafeAreaView>
     )
