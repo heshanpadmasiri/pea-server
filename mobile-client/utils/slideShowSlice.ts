@@ -5,7 +5,8 @@ export const slideShowSlice = createSlice({
     initialState: {
         inSlideShow: false,
         currentIndex: 0,
-        lastTouchX: 0
+        lastTouchX: 0,
+        maxIndex: 0,
     },
     reducers: {
         startSlideShow: (state) => {
@@ -19,10 +20,13 @@ export const slideShowSlice = createSlice({
         },
         setCurrentIndex: (state, action) => {
             state.currentIndex = action.payload;
+        },
+        setMaxIndex: (state, action) => {
+            state.maxIndex = action.payload;
         }
     }
 });
 
-export const { startSlideShow, endSlideShow, setTouchPoint, setCurrentIndex } = slideShowSlice.actions;
+export const { startSlideShow, endSlideShow, setTouchPoint, setCurrentIndex, setMaxIndex } = slideShowSlice.actions;
 
 export default slideShowSlice.reducer;

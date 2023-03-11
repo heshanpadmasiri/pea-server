@@ -4,7 +4,7 @@ import { fileContentUrl, Metadata } from "../../utils/services"
 import { useGetFilesByTypeQuery } from "../../utils/apiSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../utils/store";
-import { endSlideShow, setCurrentIndex, setTouchPoint, startSlideShow } from "../../utils/slideShowSlice";
+import { endSlideShow, setCurrentIndex, setMaxIndex, setTouchPoint, startSlideShow } from "../../utils/slideShowSlice";
 
 const ImageGrid = () => {
     const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "bmp", "tiff", "tif", "svg", "webp"];
@@ -13,9 +13,23 @@ const ImageGrid = () => {
     const inSlideShow = useSelector((state: RootState) => state.slideShow.inSlideShow);
     const lastTouchX = useSelector((state: RootState) => state.slideShow.lastTouchX);
     const slideShowIndex = useSelector((state: RootState) => state.slideShow.currentIndex);
+    const maxIndex = useSelector((state: RootState) => state.slideShow.maxIndex);
     const dispatch = useDispatch();
     const maxWidth = Dimensions.get('window').width;
     const maxHeight = Dimensions.get('window').height;
+
+    useEffect(() => {
+        if (!inSlideShow) {
+            return;
+        }
+        const startIndex = slideShowIndex;
+        setTimeout(() => {
+            if (slideShowIndex != startIndex) {
+                return;
+            }
+            dispatch(setCurrentIndex((slideShowIndex + 1) % maxIndex));
+        }, SLIDE_SHOW_INTERVAL);
+    }, [inSlideShow, slideShowIndex]);
 
     let content;
     if (resultArray.some((each) => each.isLoading)) {
@@ -32,19 +46,7 @@ const ImageGrid = () => {
             }
             return acc.concat(each.data);
         }, [] as Metadata[])
-        useEffect(() => {
-            if (!inSlideShow) {
-                return;
-            }
-            const startIndex = slideShowIndex;
-            setTimeout(() => {
-                if (slideShowIndex != startIndex) {
-                    return;
-                }
-                dispatch(setCurrentIndex((slideShowIndex + 1) % imageFiles.length));
-            }, SLIDE_SHOW_INTERVAL);
-        }, [inSlideShow, slideShowIndex]);
-
+        dispatch(setMaxIndex(imageFiles.length));
         const imageProps = imageFiles.map((each, index) => {
             return {
                 uri: fileContentUrl(each),

@@ -1,7 +1,6 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { View, Text, Switch, ScrollView } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { tagSelectorInitialized } from "../utils/componentSlice";
 import { RootState } from "../utils/store";
 import styles from "../utils/styles";
 import { selectTag, unselectTag } from "../utils/tagSlice";
@@ -9,15 +8,6 @@ import { useGetTagsQuery } from "../utils/apiSlice";
 
 const TagSelector = () => {
     const result = useGetTagsQuery();
-    const dispatch = useDispatch();
-    const intialized = useSelector((state: RootState) => state.components.tagSelectorInitialized);
-
-    useEffect(() => {
-        if (!intialized) {
-            dispatch(tagSelectorInitialized());
-        }
-    }, [intialized]);
-
     const tags = result.data;
     const sortedTags = useMemo(() => {
         const sortedTags = tags?.slice()

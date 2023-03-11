@@ -1,13 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit';
 import tagReducer from './tagSlice';
-import componentReducer from './componentSlice';
 import slideShowReducer from './slideShowSlice';
 import { apiSlice } from './apiSlice';
 
 const store = configureStore({
     reducer: {
         tages: tagReducer,
-        components: componentReducer,
         slideShow: slideShowReducer,
         [apiSlice.reducerPath]: apiSlice.reducer
     },
