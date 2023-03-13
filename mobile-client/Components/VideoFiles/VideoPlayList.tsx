@@ -1,39 +1,13 @@
-import { FlatList, Image, Text, TouchableHighlight, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 import { fileContentUrl, Metadata } from '../../utils/services';
 import styles from '../../utils/styles';
-import * as VideoThumbnails from 'expo-video-thumbnails';
-import { AsyncState } from '../../utils/states';
-import { useNavigation } from '@react-navigation/native';
-import { VideoRouteParamList } from './VideoFiles';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useGetFilesByTypeQuery } from '../../utils/apiSlice';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../utils/store';
-import { initializeThumbnailProps, Thumbnail, updateThumbnailProp } from '../../utils/videoSlice';
-import { useEffect } from 'react';
+import React from 'react';
+import { Video } from 'expo-av';
+import * as ScreenOrientation from 'expo-screen-orientation';
 
 export default function VideoPlayList() {
     const result = useGetFilesByTypeQuery("mp4");
-    const thumbnailProps = useSelector((state: RootState) => state.video.thumbnailProps);
-    const initialized = useSelector((state: RootState) => state.video.initialized);
-
-    const dispatch = useDispatch();
-
-    useEffect(() => {
-        if (result.isSuccess && !initialized) {
-            const thumbnails = result.data.map((file: Metadata, index: number) => {
-                return {
-                    index,
-                    id: file.id,
-                    url: fileContentUrl(file),
-                    thumbnail: AsyncState.loading,
-                    title: file.name,
-                }
-            });
-            dispatch(initializeThumbnailProps(thumbnails));
-        }
-    }, [result]);
-
     let content;
     if (result.isLoading) {
         content = (
@@ -47,8 +21,16 @@ export default function VideoPlayList() {
         )
     }
     else if (result.isSuccess) {
+        const thumbnails = result.data.map((file: Metadata, index: number) => {
+            return {
+                index,
+                id: file.id,
+                url: fileContentUrl(file),
+                title: file.name,
+            }
+        });
         content = (
-            <FlatList data={thumbnailProps} renderItem={({ item }) => <ThumbnailCard {...item} />} />
+            <FlatList data={thumbnails} renderItem={({ item }) => <ThumbnailCard {...item} />} />
         )
     }
     return (
@@ -58,81 +40,42 @@ export default function VideoPlayList() {
     )
 }
 
-
-const generateThumbnail = (url: string): Promise<Thumbnail> => {
-    return new Promise((resolve, _) => {
-        VideoThumbnails.getThumbnailAsync(url, ThumbnailOptions)
-            .then((result) => {
-                resolve({ uri: result.uri });
-            }).catch((err) => {
-                console.error(err);
-                resolve(AsyncState.error);
-            });
-
-    });
-}
-
 type ThumbnailCardProps = {
     index: number;
     title: string
     url: string,
-    thumbnail: Thumbnail
 };
 
-type NavigationType = NativeStackScreenProps<VideoRouteParamList, 'Selector'>['navigation'];
 
 function ThumbnailCard(props: ThumbnailCardProps) {
-    const dispatch = useDispatch();
-    const { index, title, url } = props;
-    const navigation = useNavigation<NavigationType>();
-
-    if (props.thumbnail == AsyncState.loading) {
-        // generateThumbnail(url).then((thumbnail) => {
-        //     dispatch(updateThumbnailProp({ index, thumbnail }));
-        // });
-    }
-
+    const title = props.title;
     return (
-        <TouchableHighlight onPress={() => {navigation.navigate('Player', {url});}}>
-            <View style={styles.thumbnailCard}>
-                <Text style={styles.thumbnailHeading}>{title}</Text>
-                <ThumbnailImage {...props} />
-            </View>
-        </TouchableHighlight>
+        <View style={styles.thumbnailCard}>
+            <Text style={styles.thumbnailHeading}>{title}</Text>
+            <VideoPlayer {...props} />
+        </View>
     );
 }
 
-const ThumbnailOptions = {
-    quality: 0.8,
-    time: 1000
+type VideoPlayerProps = {
+    url: string;
 }
 
-type ThumbnailImageProps = {
-    thumbnail: Thumbnail
-}
-
-function ThumbnailImage(props: ThumbnailImageProps) {
-    let { thumbnail } = props;
-    if (thumbnail == AsyncState.loading) {
-        return (
-            <View>
-                <Text>Loading...</Text>
-            </View>
-        )
+function VideoPlayer(props: VideoPlayerProps) {
+    let { url } = props;
+    const source = { uri: url };
+    const video = React.useRef<Video>(null);
+    const setOrientation = () => {
+        ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
     }
-    else if (thumbnail == AsyncState.error) {
-        return (
-            <View>
-                <Text>Error loading thumbnail!</Text>
-            </View>
-        )
-    }
-    else {
-        return (
-            <View>
-                <Image source={thumbnail} style={styles.thumbnail} />
-            </View>
-        )
-    }
-
+    return (
+        <Video
+            ref={video}
+            style={styles.video}
+            source={source}
+            useNativeControls
+            isLooping
+            onFullscreenUpdate={setOrientation}
+        />
+    );
 }
