@@ -9,7 +9,9 @@ const store = configureStore({
         slideShow: slideShowReducer,
         [apiSlice.reducerPath]: apiSlice.reducer
     },
-    middleware: getDefaultMiddleware => getDefaultMiddleware().concat(apiSlice.middleware)
+    middleware: getDefaultMiddleware => getDefaultMiddleware(
+        { serializableCheck: false }
+    ).concat(apiSlice.middleware)
 });
 
 export type RootState = ReturnType<typeof store.getState>
