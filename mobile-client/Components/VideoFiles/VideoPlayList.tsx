@@ -1,13 +1,22 @@
 import { FlatList, Text, View } from 'react-native';
 import { fileContentUrl, Metadata } from '../../utils/services';
 import styles from '../../utils/styles';
-import { useGetFilesByTypeQuery } from '../../utils/apiSlice';
+import { QueryResult, useGetFilesByConditionQuery, useGetFilesByTypeQuery } from '../../utils/apiSlice';
 import React from 'react';
 import { Video } from 'expo-av';
 import * as ScreenOrientation from 'expo-screen-orientation';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../utils/store';
 
 export default function VideoPlayList() {
-    const result = useGetFilesByTypeQuery("mp4");
+    const selectedTags = useSelector((state: RootState) => state.tages.selectedTags);
+    let result:QueryResult;
+    if (selectedTags.length > 0) {
+        result = useGetFilesByConditionQuery({ type: "mp4", tags: selectedTags }) as QueryResult;
+    }
+    else {
+        result = useGetFilesByTypeQuery("mp4") as QueryResult;
+    }
     let content;
     if (result.isLoading) {
         content = (
