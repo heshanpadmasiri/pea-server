@@ -16,7 +16,7 @@ export default function App() {
         <Provider store={store}>
             <NavigationContainer>
                 <View style={styles.container}>
-                    <Tab.Navigator initialRouteName="Images" screenOptions={({ route }) => ({
+                    <Tab.Navigator initialRouteName="Videos" screenOptions={({ route }) => ({
                         tabBarIcon: ({ focused, color, size }) => {
                             let iconName;
                             if (route.name === 'Videos') {

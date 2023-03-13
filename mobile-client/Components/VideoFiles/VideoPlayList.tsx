@@ -10,6 +10,7 @@ import { useGetFilesByTypeQuery } from '../../utils/apiSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../utils/store';
 import { initializeThumbnailProps, Thumbnail, updateThumbnailProp } from '../../utils/videoSlice';
+import { useEffect } from 'react';
 
 export default function VideoPlayList() {
     const result = useGetFilesByTypeQuery("mp4");
@@ -17,6 +18,21 @@ export default function VideoPlayList() {
     const initialized = useSelector((state: RootState) => state.video.initialized);
 
     const dispatch = useDispatch();
+
+    useEffect(() => {
+        if (result.isSuccess && !initialized) {
+            const thumbnails = result.data.map((file: Metadata, index: number) => {
+                return {
+                    index,
+                    id: file.id,
+                    url: fileContentUrl(file),
+                    thumbnail: AsyncState.loading,
+                    title: file.name,
+                }
+            });
+            dispatch(initializeThumbnailProps(thumbnails));
+        }
+    }, [result]);
 
     let content;
     if (result.isLoading) {
@@ -31,18 +47,6 @@ export default function VideoPlayList() {
         )
     }
     else if (result.isSuccess) {
-        if (!initialized) {
-            const thumbnails = result.data.map((file: Metadata, index: number) => {
-                return {
-                    index,
-                    id: file.id,
-                    url: fileContentUrl(file),
-                    thumbnail: AsyncState.loading,
-                    title: file.name,
-                }
-            });
-            dispatch(initializeThumbnailProps(thumbnails));
-        }
         content = (
             <FlatList data={thumbnailProps} renderItem={({ item }) => <ThumbnailCard {...item} />} />
         )
@@ -83,9 +87,9 @@ function ThumbnailCard(props: ThumbnailCardProps) {
     const navigation = useNavigation<NavigationType>();
 
     if (props.thumbnail == AsyncState.loading) {
-        generateThumbnail(url).then((thumbnail) => {
-            dispatch(updateThumbnailProp({ index, thumbnail }));
-        });
+        // generateThumbnail(url).then((thumbnail) => {
+        //     dispatch(updateThumbnailProp({ index, thumbnail }));
+        // });
     }
 
     return (

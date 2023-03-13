@@ -31,6 +31,15 @@ const ImageGrid = () => {
         }, SLIDE_SHOW_INTERVAL);
     }, [inSlideShow, slideShowIndex]);
 
+    useEffect(() => {
+        if (resultArray.every((each) => each.isSuccess)) {
+            const newMaxIndex = resultArray.length;
+            if (newMaxIndex != maxIndex) {
+                dispatch(setMaxIndex(resultArray.length));
+            }
+        }
+    }, [resultArray]);
+
     let content;
     if (resultArray.some((each) => each.isLoading)) {
         content = (<Text>Loading...</Text>);
@@ -46,7 +55,6 @@ const ImageGrid = () => {
             }
             return acc.concat(each.data);
         }, [] as Metadata[])
-        dispatch(setMaxIndex(imageFiles.length));
         const imageProps = imageFiles.map((each, index) => {
             return {
                 uri: fileContentUrl(each),
