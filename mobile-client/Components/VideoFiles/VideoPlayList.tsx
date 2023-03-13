@@ -1,7 +1,6 @@
 import { FlatList, Text, View } from 'react-native';
-import { fileContentUrl, Metadata } from '../../utils/services';
 import styles from '../../utils/styles';
-import { QueryResult, useGetFilesByConditionQuery, useGetFilesByTypeQuery } from '../../utils/apiSlice';
+import { fileContentUrl, Metadata, QueryResult, useGetFilesByConditionQuery, useGetFilesByTypeQuery } from '../../utils/apiSlice';
 import React from 'react';
 import { Video } from 'expo-av';
 import * as ScreenOrientation from 'expo-screen-orientation';

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { View, FlatList, Image, TouchableOpacity, Text, Modal, Pressable, Dimensions } from "react-native";
-import { fileContentUrl, Metadata } from "../../utils/services"
-import { QueryResult, useGetFilesByConditionQuery, useGetFilesByTypeQuery } from "../../utils/apiSlice";
+import { fileContentUrl, Metadata, QueryResult, useGetFilesByConditionQuery, useGetFilesByTypeQuery } from "../../utils/apiSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../utils/store";
 import { endSlideShow, setCurrentIndex, setMaxIndex, setTouchPoint, startSlideShow } from "../../utils/slideShowSlice";

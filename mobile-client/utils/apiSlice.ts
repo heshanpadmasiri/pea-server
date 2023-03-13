@@ -1,6 +1,12 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import config from "../config.json";
-import { Metadata } from './services';
+
+export interface Metadata {
+    name: string,
+    id: string,
+    ty: string,
+    tags: string[],
+}
 
 export type Condition = {
     type: string,
@@ -15,12 +21,19 @@ export type QueryResult = {
     data: Metadata[]
 }
 
+export function fileContentUrl(file: Metadata): string {
+    return config.SERVER_URL + "/content/" + file.id;
+}
+
 export const apiSlice = createApi({
     reducerPath: 'api',
     baseQuery: fetchBaseQuery({ baseUrl: config.SERVER_URL }),
     endpoints: (builder) => ({
         getTags: builder.query<string[], void>({
             query: () => '/tags'
+        }),
+        getFiles: builder.query<Metadata[], void>({
+            query: () => '/files'
         }),
         getFilesByType: builder.query<Metadata[], string>({
             query: (type) => `/files/${type}`
@@ -37,4 +50,4 @@ export const apiSlice = createApi({
     })
 });
 
-export const { useGetTagsQuery, useGetFilesByTypeQuery, useGetFilesByConditionQuery } = apiSlice;
+export const { useGetTagsQuery, useGetFilesQuery, useGetFilesByTypeQuery, useGetFilesByConditionQuery } = apiSlice;

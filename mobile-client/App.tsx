@@ -2,7 +2,7 @@ import { View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import OtherFiles from './Components/OtherFiles';
+import AllFiles from './Components/AllFiles';
 import styles from './utils/styles';
 import VideoFiles from './Components/VideoFiles/VideoFiles';
 import ImageFiles from './Components/ImageFiles/ImageFiles';
@@ -36,7 +36,7 @@ export default function App() {
                         <Tab.Screen name="Videos" component={VideoFiles} />
                         <Tab.Screen name="Images" component={ImageFiles} />
                         <Tab.Screen name="PDF" component={PdfFiles} />
-                        <Tab.Screen name="Other" component={OtherFiles} />
+                        <Tab.Screen name="All" component={AllFiles} />
                     </Tab.Navigator>
                 </View>
             </NavigationContainer>
