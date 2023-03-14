@@ -1,19 +1,21 @@
-import { FlatList, SafeAreaView, Text } from 'react-native';
-import { useSelector } from 'react-redux';
-import { QueryResult, useGetFilesByConditionQuery, useGetFilesByTypeQuery } from '../utils/apiSlice';
-import { RootState } from '../utils/store';
-import styles from '../utils/styles';
-import TagSelector from './TagSelector';
-export default function PdfFiles() {
+import { Text, FlatList, SafeAreaView } from 'react-native';
+import { useSelector } from "react-redux";
+import { QueryResult, useGetFilesByConditionQuery, useGetFilesQuery } from "../utils/apiSlice";
+import { RootState } from "../utils/store";
+import styles from "../utils/styles";
+import TagSelector from "./TagSelector";
+
+export default function AllFiles() {
     const selectedTags = useSelector((state: RootState) => state.tages.selectedTags);
     let result: QueryResult;
     if (selectedTags.length > 0) {
-        result = useGetFilesByConditionQuery({ type: "pdf", tags: selectedTags }) as QueryResult;
+        result = useGetFilesByConditionQuery({ type: "", tags: selectedTags }) as QueryResult;
     }
     else {
-        result = useGetFilesByTypeQuery("pdf") as QueryResult;
+        result = useGetFilesQuery() as QueryResult;
     }
     let content;
+
     if (result.isLoading) {
         content = (
             <Text>Loading...</Text>
@@ -35,6 +37,5 @@ export default function PdfFiles() {
             <TagSelector />
             {content}
         </SafeAreaView>
-
     )
 }

@@ -1,40 +1,31 @@
 import { useEffect, useState } from "react";
-import { View, FlatList, Image, TouchableOpacity, Text, Modal, Alert, Button, Pressable, Dimensions } from "react-native";
-import { fileContentUrl, Metadata } from "../../utils/services"
+import { View, FlatList, Image, TouchableOpacity, Text, Modal, Pressable, Dimensions } from "react-native";
+import { fileContentUrl, Metadata, QueryResult, useGetFilesByConditionQuery, useGetFilesByTypeQuery } from "../../utils/apiSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../../utils/store";
+import { endSlideShow, setCurrentIndex, setMaxIndex, setTouchPoint, startSlideShow } from "../../utils/slideShowSlice";
 
-export type ImageGridProps = {
-    imageFiles: Metadata[];
-}
-
-const ImageGrid = (props: ImageGridProps) => {
-    const { imageFiles } = props;
-    const [isSlideShow, setIsSlideShow] = useState(false);
-    const [slideShowIndex, setSlideShowIndex] = useState(0);
-    const [lastTouchX, setLastTouchX] = useState(0);
-
+const ImageGrid = () => {
+    const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "bmp", "tiff", "tif", "svg", "webp"];
+    const SLIDE_SHOW_INTERVAL = 30000;
+    const inSlideShow = useSelector((state: RootState) => state.slideShow.inSlideShow);
+    const lastTouchX = useSelector((state: RootState) => state.slideShow.lastTouchX);
+    const slideShowIndex = useSelector((state: RootState) => state.slideShow.currentIndex);
+    const maxIndex = useSelector((state: RootState) => state.slideShow.maxIndex);
+    const dispatch = useDispatch();
     const maxWidth = Dimensions.get('window').width;
     const maxHeight = Dimensions.get('window').height;
-
-    const showFullScreenCallback = (index: number) => {
-        return () => {
-            if (isSlideShow) {
-                return;
-            }
-            setSlideShowIndex(index);
-            setIsSlideShow(true);
-        }
+    const selectedTags = useSelector((state: RootState) => state.tages.selectedTags);
+    let resultArray: QueryResult[];
+    if (selectedTags.length > 0) {
+        resultArray = IMAGE_TYPES.map((ty) => { return useGetFilesByConditionQuery({ type: ty, tags: selectedTags }); }) as QueryResult[];
+    }
+    else {
+        resultArray = IMAGE_TYPES.map((each) => { return useGetFilesByTypeQuery(each); }) as QueryResult[];
     }
 
-    const imageProps = imageFiles.map((each, index) => {
-        return {
-            uri: fileContentUrl(each),
-            showFullScreen: showFullScreenCallback(index),
-            maxWidth
-        }
-    });
-
     useEffect(() => {
-        if (!isSlideShow) {
+        if (!inSlideShow) {
             return;
         }
         const startIndex = slideShowIndex;
@@ -42,66 +33,117 @@ const ImageGrid = (props: ImageGridProps) => {
             if (slideShowIndex != startIndex) {
                 return;
             }
-            setSlideShowIndex((slideShowIndex + 1) % imageFiles.length);
-        }, 60000);
-    }, [slideShowIndex]);
+            dispatch(setCurrentIndex((slideShowIndex + 1) % maxIndex));
+        }, SLIDE_SHOW_INTERVAL);
+    }, [inSlideShow, slideShowIndex]);
+
+    useEffect(() => {
+        if (resultArray.every((each) => each.isSuccess)) {
+            const newMaxIndex = resultArray.length;
+            if (newMaxIndex != maxIndex) {
+                dispatch(setMaxIndex(resultArray.length));
+            }
+        }
+    }, [resultArray]);
+
+    let content;
+    if (resultArray.some((each) => each.isLoading)) {
+        content = (<Text>Loading...</Text>);
+    }
+    else if (resultArray.some((each) => each.isError)) {
+        resultArray.filter((each) => each.isError).forEach((each) => console.error(each.error));
+        content = (<Text>Error!</Text>);
+    }
+    else if (resultArray.every((each) => each.isSuccess)) {
+        const imageFiles = resultArray.reduce((acc, each) => {
+            // I don't think this can ever happen
+            if (each.data == undefined) {
+                return acc;
+            }
+            return acc.concat(each.data);
+        }, [] as Metadata[])
+        const imageProps = imageFiles.map((each, index) => {
+            return {
+                uri: fileContentUrl(each),
+                index,
+                maxWidth
+            }
+        });
+
+        content = (
+            <View>
+                <Modal
+                    animationType="slide"
+                    transparent={false}
+                    statusBarTranslucent={true}
+                    visible={inSlideShow}
+                    onRequestClose={() => {
+                        dispatch(endSlideShow());
+                    }}>
+                    <View style={{ backgroundColor: "black" }}>
+                        <Pressable
+                            onLongPress={() => {
+                                dispatch(endSlideShow());
+                            }}
+                            onPressIn={(event) => {
+                                dispatch(setTouchPoint(event.nativeEvent.locationX));
+                            }}
+                            onPressOut={(event) => {
+                                const diff = event.nativeEvent.locationX - lastTouchX;
+                                if (diff > 50) {
+                                    dispatch(setCurrentIndex((slideShowIndex + 1) % imageFiles.length));
+                                }
+                                else if (diff < -50) {
+                                    dispatch(setCurrentIndex((slideShowIndex - 1 + imageFiles.length) % imageFiles.length));
+                                }
+                                else {
+                                    dispatch(setTouchPoint(event.nativeEvent.locationX));
+                                }
+                            }}
+                        >
+                            <SlideShow imageFile={imageFiles[slideShowIndex]} maxHeight={maxHeight} maxWidth={maxWidth} />
+                        </Pressable>
+                    </View>
+                </Modal>
+                <FlatList
+                    showsVerticalScrollIndicator={false}
+                    showsHorizontalScrollIndicator={false}
+                    data={imageProps}
+                    renderItem={({ item }) => <GridImage {...item} />}
+                    keyExtractor={item => item.uri}
+                />
+            </View>
+        )
+    }
 
     return (
         <View style={{ flex: 5 }}>
-            <Modal
-                animationType="slide"
-                transparent={false}
-                statusBarTranslucent={true}
-                visible={isSlideShow}
-                onRequestClose={() => {
-                    setIsSlideShow(false);
-                }}>
-                <View style={{ backgroundColor: "black" }}>
-                    <Pressable
-                        onLongPress={() => { setIsSlideShow(false); }}
-                        onPressIn={(event) => { setLastTouchX(event.nativeEvent.locationX); }}
-                        onPressOut={(event) => {
-                            const diff = event.nativeEvent.locationX - lastTouchX;
-                            if (diff > 50) {
-                                setSlideShowIndex((slideShowIndex + 1) % imageFiles.length);
-                            }
-                            else if (diff < -50) {
-                                setSlideShowIndex((slideShowIndex - 1 + imageFiles.length) % imageFiles.length);
-                            }
-                            else {
-                                setLastTouchX(event.nativeEvent.locationX);
-                            }
-                        }}
-                    >
-                        <SlideShow imageFile={imageFiles[slideShowIndex]} maxHeight={maxHeight} maxWidth={maxWidth} />
-                    </Pressable>
-                </View>
-            </Modal>
-            <FlatList
-                showsVerticalScrollIndicator={false}
-                showsHorizontalScrollIndicator={false}
-                data={imageProps}
-                renderItem={({ item }) => <GridImage {...item} />}
-                keyExtractor={item => item.uri}
-            />
+            {content}
         </View>
     )
 }
 
 type ImageProps = {
     uri: string,
-    showFullScreen: () => void,
+    index: number,
     maxWidth: number;
 }
 
 function GridImage(props: ImageProps) {
-    const { uri, showFullScreen, maxWidth } = props;
+    const { uri, index, maxWidth } = props;
     const [width, setWidth] = useState(300);
     const [height, setHeight] = useState(300);
+    const dispatch = useDispatch();
     Image.getSize(uri, (width, height) => {
         setWidth(Math.min(width, maxWidth));
         setHeight(height);
     });
+
+    const showFullScreen = () => {
+        dispatch(setCurrentIndex(index));
+        dispatch(startSlideShow());
+    }
+
     return (
         <View style={{ flex: 1, alignSelf: "center" }} key={uri}>
             <TouchableOpacity onPress={showFullScreen}>

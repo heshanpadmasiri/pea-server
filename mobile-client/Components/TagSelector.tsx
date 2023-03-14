@@ -1,75 +1,66 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { View, Text, Switch, ScrollView } from "react-native";
-import { getTags } from "../utils/services";
-import { get_data_and_update_state } from "../utils/states";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../utils/store";
 import styles from "../utils/styles";
+import { selectTag, unselectTag } from "../utils/tagSlice";
+import { useGetTagsQuery } from "../utils/apiSlice";
 
-export type TagSelectorProps = {
-    updateSelectedTags: (tags: string[]) => void;
-    selectedTags: string[];
-}
+const TagSelector = () => {
+    const result = useGetTagsQuery();
+    const tags = result.data;
+    const sortedTags = useMemo(() => {
+        const sortedTags = tags?.slice()
+        // Sort posts in descending chronological order
+        sortedTags?.sort()
+        return sortedTags
+    }, [tags])
 
-const TagSelector = (props: TagSelectorProps) => {
-    const { selectedTags, updateSelectedTags } = props;
-    const [isLoading, setIsLoading] = useState(true);
-    const [initialized, setInitialized] = useState(false);
-    const [isError, setIsError] = useState(false);
-    const [tags, setTags] = useState<string[]>([]);
+    let content;
 
-    useEffect(() => {
-        if (!initialized) {
-            get_data_and_update_state<string>(getTags, setTags, setIsLoading, setIsError);
-            setInitialized(true);
-        }
-    });
-
-    const selectorToggleFunction = (tag: string) => {
-        return (val: boolean) => {
-            const newSelectedTags = !val ? selectedTags.filter((selectedTag) => selectedTag !== tag) : [...selectedTags, tag];
-            updateSelectedTags(newSelectedTags);
-        }
+    if (result.isLoading) {
+        content = (<Text>Loading...</Text>);
     }
-
-    if (isLoading) {
-        return (
-            <View style={styles.container}>
-                <Text>Loading...</Text>
-            </View>
-        );
+    else if (result.isError) {
+        console.error(result.error);
+        content = (<Text>Error!</Text>);
     }
-    else if (isError) {
-        return (
-            <View style={styles.container}>
-                <Text>Error!</Text>
-            </View>
-        );
-    }
-    else {
-        const selectors = tags.map((tag) => {
+    else if (result.isSuccess) {
+        const selectors = sortedTags?.map((tag) => {
             return (
                 <Selector
                     key={tag}
                     tag={tag}
-                    selected={selectedTags.includes(tag)}
-                    toggleFunction={selectorToggleFunction(tag)}
                 />
             )
         })
-        return (<ScrollView style={styles.tag_selector}>{selectors}</ScrollView>);
+        content = (<ScrollView style={styles.tag_selector}>{selectors}</ScrollView>);
     }
+    return (
+        <View style={styles.container}>
+            {content}
+        </View>
+    )
 }
 
 export default TagSelector
 
 type SelectorProps = {
     tag: string;
-    selected: boolean;
-    toggleFunction: (val: boolean) => void;
 }
 
 const Selector = (props: SelectorProps) => {
-    const enabled = props.selected;
-    const toggleSwitch = props.toggleFunction;
+    const tag = props.tag;
+    const enabled = useSelector((state: RootState) => state.tages.selectedTags.includes(tag));
+    const dispatch = useDispatch();
+    const toggleSwitch = (selected: boolean) => {
+        if (selected) {
+            dispatch(selectTag(tag));
+        }
+        else {
+            dispatch(unselectTag(tag));
+        }
+    };
     return (
         <View style={styles.switch_container}>
             <Text>{props.tag}</Text>
