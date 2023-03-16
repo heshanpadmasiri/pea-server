@@ -2,5 +2,6 @@
 /content
 /client-content
 /files
+/received
 /index-files
 *config.json

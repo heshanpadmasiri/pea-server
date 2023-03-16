@@ -10,6 +10,9 @@ on:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: ./server
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -34,14 +37,16 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: build
+          args: --manifest-path ./server/Cargo.toml
       - uses: actions-rs/cargo@v1
         with:
           command: test
+          args: --manifest-path ./server/Cargo.toml
       - uses: actions-rs/cargo@v1
         with:
           command: fmt
-          args: --all -- --check
+          args: --all --check --manifest-path ./server/Cargo.toml
       - uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: -- -D warnings
+          args: --manifest-path ./server/Cargo.toml -- -D warnings

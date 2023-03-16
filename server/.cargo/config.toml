@@ -1,0 +1,10 @@
+[build]
+target-dir = "../target"
+
+[env]
+PEA_CLIENT_CONTENT_DIR = "../client-content"
+PEA_CONTENT_DIR        = "../content"
+PEA_FILES_DIR          = "../files"
+PEA_RECEIVED_FILES_DIR = "../received"
+PEA_INDEX_FILE         = "../index-files/index.json"
+PEA_CLIENT_DIR         = "../client"

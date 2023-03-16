@@ -1,21 +1,17 @@
 use std::{
+    env,
     io::Write,
     path::{Path, PathBuf},
     process::Command,
 };
 
 fn main() {
-    let client_content_dir = PathBuf::from("./client-content");
-    let client_config_paths = [
-        PathBuf::from("./pea-client/config.json"),
-        PathBuf::from("./mobile-client/config.json"),
-    ];
     if Ok("release".to_owned()) == std::env::var("PROFILE") {
-        for each in client_config_paths {
-            create_server_config(&each);
-        }
+        let client_content_dir = PathBuf::from(env::var("PEA_CLIENT_CONTENT_DIR").unwrap());
+        let client_dir = PathBuf::from(env::var("PEA_CLIENT_DIR").unwrap());
+        create_server_config(&client_dir.join("config.json"));
         clean_and_create_dir(&client_content_dir);
-        create_and_copy_static_page(&PathBuf::from("./mobile-client"), &client_content_dir)
+        create_and_copy_static_page(client_dir, &client_content_dir)
     }
 }
 
@@ -27,13 +23,16 @@ fn clean_and_create_dir(dir_name: &Path) {
     Command::new("mkdir").args([dir_name]).status().unwrap();
 }
 
-fn create_and_copy_static_page(src: &Path, dest: &Path) {
+fn create_and_copy_static_page(src: PathBuf, dest: &Path) {
     Command::new("npx")
         .args(["expo", "export:web"])
-        .current_dir(src)
+        .current_dir(&src)
         .status()
         .unwrap();
     let src_artifact = src.join("web-build/");
+    if !src_artifact.exists() {
+        panic!("failed to build client application")
+    }
     Command::new("cp")
         .args([
             "-r",
