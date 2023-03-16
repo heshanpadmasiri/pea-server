@@ -7,7 +7,7 @@ use std::{
 
 fn main() {
     if Ok("release".to_owned()) == std::env::var("PROFILE") {
-        let client_content_dir = PathBuf::from(env::var("PEA_CLIENT_CONTENT").unwrap());
+        let client_content_dir = PathBuf::from(env::var("PEA_CLIENT_CONTENT_DIR").unwrap());
         let client_dir = PathBuf::from(env::var("PEA_CLIENT_DIR").unwrap());
         create_server_config(&client_dir.join("config.json"));
         clean_and_create_dir(&client_content_dir);
@@ -30,6 +30,9 @@ fn create_and_copy_static_page(src: PathBuf, dest: &Path) {
         .status()
         .unwrap();
     let src_artifact = src.join("web-build/");
+    if !src_artifact.exists() {
+        panic!("failed to build client application")
+    }
     Command::new("cp")
         .args([
             "-r",
