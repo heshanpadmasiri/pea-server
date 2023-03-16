@@ -8,6 +8,9 @@ on:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: ./server
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
