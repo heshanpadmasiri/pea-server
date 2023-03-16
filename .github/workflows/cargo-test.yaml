@@ -45,8 +45,8 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: fmt
-          args: --all -- --check --manifest-path ./server/Cargo.toml
+          args: --all --check --manifest-path ./server/Cargo.toml
       - uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: -- -D warnings --manifest-path ./server/Cargo.toml
+          args: --manifest-path ./server/Cargo.toml -- -D warnings

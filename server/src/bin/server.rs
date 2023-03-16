@@ -1,9 +1,10 @@
 use std::{
+    env,
     net::{self, SocketAddr},
     path::PathBuf,
     sync::Mutex,
     time::Duration,
-    vec::IntoIter, env,
+    vec::IntoIter,
 };
 
 use futures_util::StreamExt as _;
@@ -31,11 +32,16 @@ async fn main() -> std::io::Result<()> {
         .init()
         .unwrap();
     let discovery_enable = std::env::args().any(|each| each == "--discovery");
-    let index_path = std::env::args()
-        .nth(1)
-        .or_else(|| Some(env::var("PEA_INDEX_FILE").expect("failed to read PEA_INDEX_FILE env var and no index file path was given")))
-        .map(PathBuf::from)
-        .unwrap();
+    let index_path =
+        std::env::args()
+            .nth(1)
+            .or_else(|| {
+                Some(env::var("PEA_INDEX_FILE").expect(
+                    "failed to read PEA_INDEX_FILE env var and no index file path was given",
+                ))
+            })
+            .map(PathBuf::from)
+            .unwrap();
     let address = Box::new(
         std::env::args()
             .nth(2)
@@ -112,7 +118,15 @@ fn create_and_run_server(config: Config) -> std::io::Result<actix_web::dev::Serv
                     .route(actix_web::web::get().to(get_content)),
             )
             .service(
-                actix_files::Files::new("/static", PathBuf::from(env::var("PEA_CLIENT_CONTENT_DIR").expect("make sure PEA_CLIENT_CONTENT_DIR is set")).join("static")).show_files_listing(),
+                actix_files::Files::new(
+                    "/static",
+                    PathBuf::from(
+                        env::var("PEA_CLIENT_CONTENT_DIR")
+                            .expect("make sure PEA_CLIENT_CONTENT_DIR is set"),
+                    )
+                    .join("static"),
+                )
+                .show_files_listing(),
             )
     })
     .bind(config.address.as_ref())?;
@@ -131,7 +145,10 @@ impl From<&Config> for RegistryData {
 }
 
 async fn index(_req: actix_web::HttpRequest) -> actix_web::Result<actix_files::NamedFile> {
-    let path: PathBuf = PathBuf::from(env::var("PEA_CLIENT_CONTENT_DIR").expect("make sure PEA_CLIENT_CONTENT_DIR is set")).join("index.html");
+    let path: PathBuf = PathBuf::from(
+        env::var("PEA_CLIENT_CONTENT_DIR").expect("make sure PEA_CLIENT_CONTENT_DIR is set"),
+    )
+    .join("index.html");
     Ok(actix_files::NamedFile::open(path)?)
 }
 
@@ -284,10 +301,11 @@ fn all_files(index: &FileIndex) -> Vec<FileData> {
 #[cfg(test)]
 mod tests {
     use std::{
+        env,
         fs::File,
         io::{Read, Write},
         path::PathBuf,
-        sync::Mutex, env,
+        sync::Mutex,
     };
 
     use crate::{
@@ -375,7 +393,8 @@ mod tests {
         let index = FileIndex::new(&PathBuf::from(TEST_INDEX));
         let indexed_files: Vec<String> = index.files().into_iter().map(|each| each.name).collect();
         for (file_name, content) in expected {
-            let file_path = PathBuf::from(env::var("PEA_RECEIVED_FILES_DIR").unwrap()).join(file_name);
+            let file_path =
+                PathBuf::from(env::var("PEA_RECEIVED_FILES_DIR").unwrap()).join(file_name);
             let mut file = std::fs::File::open(&file_path).expect("expect file to exist");
             let mut actual = Vec::new();
             file.read_to_end(&mut actual)

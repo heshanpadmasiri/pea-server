@@ -1,9 +1,10 @@
 use std::{
     collections::{hash_map::DefaultHasher, HashMap, HashSet},
+    env,
     fs::File,
     hash::{Hash, Hasher},
     io::Write,
-    path::{Path, PathBuf}, env,
+    path::{Path, PathBuf},
 };
 
 use log::{debug, error, info};
@@ -138,7 +139,8 @@ pub fn create_file(
     filen_name: String,
     content: &[u8],
 ) -> Result<(), FileErr> {
-    let received_dir = PathBuf::from(env::var("PEA_RECEIVED_FILES_DIR").expect("PEA_RECEIVED_FILES_DIR not set"));
+    let received_dir =
+        PathBuf::from(env::var("PEA_RECEIVED_FILES_DIR").expect("PEA_RECEIVED_FILES_DIR not set"));
     if !received_dir.exists() {
         info!("creating relieved dir");
         let result = std::fs::create_dir(&received_dir);
