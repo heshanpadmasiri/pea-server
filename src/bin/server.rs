@@ -3,7 +3,7 @@ use std::{
     path::PathBuf,
     sync::Mutex,
     time::Duration,
-    vec::IntoIter,
+    vec::IntoIter, env,
 };
 
 use futures_util::StreamExt as _;
@@ -33,7 +33,7 @@ async fn main() -> std::io::Result<()> {
     let discovery_enable = std::env::args().any(|each| each == "--discovery");
     let index_path = std::env::args()
         .nth(1)
-        .or_else(|| Some("./content/index.json".to_string()))
+        .or_else(|| Some(env::var("PEA_INDEX_FILE").expect("failed to read PEA_INDEX_FILE env var and no index file path was given")))
         .map(PathBuf::from)
         .unwrap();
     let address = Box::new(
@@ -112,7 +112,7 @@ fn create_and_run_server(config: Config) -> std::io::Result<actix_web::dev::Serv
                     .route(actix_web::web::get().to(get_content)),
             )
             .service(
-                actix_files::Files::new("/static", "./client-content/static").show_files_listing(),
+                actix_files::Files::new("/static", PathBuf::from(env::var("PEA_CLIENT_CONTENT_DIR").expect("make sure PEA_CLIENT_CONTENT_DIR is set")).join("static")).show_files_listing(),
             )
     })
     .bind(config.address.as_ref())?;
@@ -131,7 +131,7 @@ impl From<&Config> for RegistryData {
 }
 
 async fn index(_req: actix_web::HttpRequest) -> actix_web::Result<actix_files::NamedFile> {
-    let path: PathBuf = "./client-content/index.html".parse().unwrap();
+    let path: PathBuf = PathBuf::from(env::var("PEA_CLIENT_CONTENT_DIR").expect("make sure PEA_CLIENT_CONTENT_DIR is set")).join("index.html");
     Ok(actix_files::NamedFile::open(path)?)
 }
 
@@ -287,7 +287,7 @@ mod tests {
         fs::File,
         io::{Read, Write},
         path::PathBuf,
-        sync::Mutex,
+        sync::Mutex, env,
     };
 
     use crate::{
@@ -304,7 +304,7 @@ mod tests {
     use std::sync::Once;
 
     static INIT: Once = Once::new();
-    const SERVER_CONTENT: &str = "./content/index.json";
+    const TEST_INDEX: &str = "test_index.json";
 
     #[tokio::test]
     async fn can_start_server() {
@@ -313,7 +313,7 @@ mod tests {
             let config = Config {
                 id: uuid::Uuid::new_v4(),
                 address: Box::new(format!("localhost:{}", 5000)),
-                index_path: PathBuf::from("./content/index.json"),
+                index_path: PathBuf::from(TEST_INDEX),
             };
             create_and_run_server(config)
                 .expect("expect server startup to succeed")
@@ -340,7 +340,7 @@ mod tests {
         let server = test::init_service(
             App::new()
                 .app_data(actix_web::web::Data::new(ServerState {
-                    file_index: Mutex::new(FileIndex::new(&PathBuf::from(SERVER_CONTENT))),
+                    file_index: Mutex::new(FileIndex::new(&PathBuf::from(TEST_INDEX))),
                 }))
                 .route("/file", web::post().to(post_file)),
         )
@@ -372,10 +372,10 @@ mod tests {
         let resp = test::call_service(&server, request).await;
         assert!(resp.status().is_success());
         let expected = [("f1.txt", "test"), ("f2.txt", "data")];
-        let index = FileIndex::new(&PathBuf::from(SERVER_CONTENT));
+        let index = FileIndex::new(&PathBuf::from(TEST_INDEX));
         let indexed_files: Vec<String> = index.files().into_iter().map(|each| each.name).collect();
         for (file_name, content) in expected {
-            let file_path = PathBuf::from("./recieved").join(file_name);
+            let file_path = PathBuf::from(env::var("PEA_RECEIVED_FILES_DIR").unwrap()).join(file_name);
             let mut file = std::fs::File::open(&file_path).expect("expect file to exist");
             let mut actual = Vec::new();
             file.read_to_end(&mut actual)
@@ -386,7 +386,7 @@ mod tests {
                 .iter()
                 .any(|name| { name == &file_name.to_string() }));
         }
-        std::fs::remove_file("./content/index.json").expect("expect deleting index to succeed");
+        std::fs::remove_file(TEST_INDEX).expect("expect deleting index to succeed");
     }
 
     #[actix_web::test]
@@ -575,7 +575,7 @@ mod tests {
     // every test properly creating the content dir
     fn initialize() {
         INIT.call_once(|| {
-            let content_path = PathBuf::from("./client-content");
+            let content_path = PathBuf::from(env::var("PEA_CLIENT_CONTENT_DIR").unwrap());
             let path = &content_path;
             clean_up_dir(path).expect("expect creating content dir to succeed");
             let mut index_file = File::create(path.join("./index.html"))

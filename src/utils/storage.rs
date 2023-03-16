@@ -3,7 +3,7 @@ use std::{
     fs::File,
     hash::{Hash, Hasher},
     io::Write,
-    path::{Path, PathBuf},
+    path::{Path, PathBuf}, env,
 };
 
 use log::{debug, error, info};
@@ -138,16 +138,16 @@ pub fn create_file(
     filen_name: String,
     content: &[u8],
 ) -> Result<(), FileErr> {
-    let recieved_dir = PathBuf::from("./recieved");
-    if !recieved_dir.exists() {
-        info!("creating recieved dir");
-        let result = std::fs::create_dir(&recieved_dir);
+    let received_dir = PathBuf::from(env::var("PEA_RECEIVED_FILES_DIR").expect("PEA_RECEIVED_FILES_DIR not set"));
+    if !received_dir.exists() {
+        info!("creating relieved dir");
+        let result = std::fs::create_dir(&received_dir);
         if result.is_err() {
-            error!("recieved_dir creation failed due to {result:?}");
+            error!("received_dir creation failed due to {result:?}");
             return Err(FileErr::FailedToCreateFile);
         }
     }
-    let path = recieved_dir.join(filen_name);
+    let path = received_dir.join(filen_name);
     match File::create(&path) {
         Ok(mut file) => match Write::write_all(&mut file, content) {
             Ok(_) => index.add_file(&path),
