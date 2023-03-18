@@ -1,10 +1,10 @@
-import { useMemo } from "react";
-import { View, Text, Switch, ScrollView } from "react-native";
-import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "../utils/store";
-import styles from "../utils/styles";
-import { selectTag, unselectTag } from "../utils/tagSlice";
-import { useGetTagsQuery } from "../utils/apiSlice";
+import { useMemo } from 'react';
+import { View, Text, Switch, ScrollView } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../utils/store';
+import styles from '../utils/styles';
+import { selectTag, unselectTag } from '../utils/tagSlice';
+import { useGetTagsQuery } from '../utils/apiSlice';
 
 const TagSelector = () => {
     const result = useGetTagsQuery();

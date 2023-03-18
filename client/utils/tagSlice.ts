@@ -1,7 +1,7 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice } from '@reduxjs/toolkit';
 
 export const tagSlice = createSlice({
-    name: "tags",
+    name: 'tags',
     initialState: {
         selectedTags: <string[]>[],
     },

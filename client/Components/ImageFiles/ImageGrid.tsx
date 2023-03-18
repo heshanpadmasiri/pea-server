@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
-import { View, FlatList, Image, TouchableOpacity, Text, Modal, Pressable, Dimensions } from "react-native";
-import { fileContentUrl, Metadata, QueryResult, useGetFilesByConditionQuery, useGetFilesByTypeQuery } from "../../utils/apiSlice";
-import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "../../utils/store";
-import { endSlideShow, setCurrentIndex, setMaxIndex, setTouchPoint, startSlideShow } from "../../utils/slideShowSlice";
+import { useEffect, useState } from 'react';
+import { View, FlatList, Image, TouchableOpacity, Text, Modal, Pressable, Dimensions } from 'react-native';
+import { fileContentUrl, Metadata, QueryResult, useGetFilesByConditionQuery, useGetFilesByTypeQuery } from '../../utils/apiSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../utils/store';
+import { endSlideShow, setCurrentIndex, setMaxIndex, setTouchPoint, startSlideShow } from '../../utils/slideShowSlice';
 
 const ImageGrid = () => {
-    const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "bmp", "tiff", "tif", "svg", "webp"];
+    const IMAGE_TYPES = ['jpeg', 'jpg', 'png', 'gif', 'bmp', 'tiff', 'tif', 'svg', 'webp'];
     const SLIDE_SHOW_INTERVAL = 30000;
     const inSlideShow = useSelector((state: RootState) => state.slideShow.inSlideShow);
     const lastTouchX = useSelector((state: RootState) => state.slideShow.lastTouchX);
@@ -80,7 +80,7 @@ const ImageGrid = () => {
                     onRequestClose={() => {
                         dispatch(endSlideShow());
                     }}>
-                    <View style={{ backgroundColor: "black" }}>
+                    <View style={{ backgroundColor: 'black' }}>
                         <Pressable
                             onLongPress={() => {
                                 dispatch(endSlideShow());
@@ -145,7 +145,7 @@ function GridImage(props: ImageProps) {
     }
 
     return (
-        <View style={{ flex: 1, alignSelf: "center" }} key={uri}>
+        <View style={{ flex: 1, alignSelf: 'center' }} key={uri}>
             <TouchableOpacity onPress={showFullScreen}>
                 <Image style={{ height, width }} source={{ uri }} />
             </TouchableOpacity>
@@ -165,7 +165,7 @@ function SlideShow(props: SlideShowProps) {
     const uri = fileContentUrl(imageFile);
 
     return (
-        <Image style={{ height, width, resizeMode: "contain" }} source={{ uri }} />
+        <Image style={{ height, width, resizeMode: 'contain' }} source={{ uri }} />
     );
 }
 

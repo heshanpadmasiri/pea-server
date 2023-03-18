@@ -1,4 +1,7 @@
 module.exports = {
+    env: {
+        browser: true,
+    },
     extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended'],
     parser: '@typescript-eslint/parser',
     parserOptions: {
@@ -13,6 +16,6 @@ module.exports = {
         'linebreak-style': ['error', 'unix'],
         quotes: ['error', 'single'],
     },
-    ignorePatterns: ['node_modules', 'web-build'],
+    ignorePatterns: ['node_modules', 'web-build', 'babel.config.js'],
     root: true,
 };
