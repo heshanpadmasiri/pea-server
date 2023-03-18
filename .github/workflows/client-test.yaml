@@ -19,3 +19,6 @@ jobs:
         run: |
           npm install
           npm test
+      - name: Run linter
+        run: |
+          npx eslint .
