@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import config from "../config.json";
+import config from '../config.json';
 
 export interface Metadata {
     name: string,
@@ -22,7 +22,7 @@ export type QueryResult = {
 }
 
 export function fileContentUrl(file: Metadata): string {
-    return config.SERVER_URL + "/content/" + file.id;
+    return config.SERVER_URL + '/content/' + file.id;
 }
 
 export const apiSlice = createApi({

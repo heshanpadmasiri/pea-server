@@ -8,10 +8,10 @@ export default function PdfFiles() {
     const selectedTags = useSelector((state: RootState) => state.tages.selectedTags);
     let result: QueryResult;
     if (selectedTags.length > 0) {
-        result = useGetFilesByConditionQuery({ type: "pdf", tags: selectedTags }) as QueryResult;
+        result = useGetFilesByConditionQuery({ type: 'pdf', tags: selectedTags }) as QueryResult;
     }
     else {
-        result = useGetFilesByTypeQuery("pdf") as QueryResult;
+        result = useGetFilesByTypeQuery('pdf') as QueryResult;
     }
     let content;
     if (result.isLoading) {

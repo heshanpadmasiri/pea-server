@@ -1,7 +1,7 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice } from '@reduxjs/toolkit';
 
 export const slideShowSlice = createSlice({
-    name: "slideShow",
+    name: 'slideShow',
     initialState: {
         inSlideShow: false,
         currentIndex: 0,
