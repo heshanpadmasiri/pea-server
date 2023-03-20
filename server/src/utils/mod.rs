@@ -123,7 +123,10 @@ mod tests {
             .iter()
             .map(|(path, tags)| {
                 create_nested_file(Path::new(path));
-                (std::fs::canonicalize(PathBuf::from(path)).unwrap(), tags.clone())
+                (
+                    std::fs::canonicalize(PathBuf::from(path)).unwrap(),
+                    tags.clone(),
+                )
             })
             .collect();
         let file_index = index_for_dir(index_path, test_storage);
