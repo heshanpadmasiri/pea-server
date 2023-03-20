@@ -276,20 +276,21 @@ fn file_metadata(path: &Path, tags: Option<Vec<String>>) -> FileMetadata {
         .to_str()
         .expect("expect valid file name")
         .to_string();
-    let mut hasher = DefaultHasher::new();
-    path.hash(&mut hasher);
-    let id = hasher.finish();
     let ty = path
         .extension()
         .expect("expect valid file extension")
         .to_str()
         .expect("expect properly formatted extension")
         .to_string();
+    let abs_path = std::fs::canonicalize(path).expect("expect canonical path");
+    let mut hasher = DefaultHasher::new();
+    abs_path.hash(&mut hasher);
+    let id = hasher.finish();
     FileMetadata {
         name,
         id,
         ty,
-        path: path.to_path_buf(),
+        path: abs_path,
         tags,
     }
 }
