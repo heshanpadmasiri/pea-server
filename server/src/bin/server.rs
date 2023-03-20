@@ -2,7 +2,7 @@ use std::{
     env,
     net::{self, SocketAddr},
     path::PathBuf,
-    sync::Mutex,
+    sync::RwLock,
     time::Duration,
     vec::IntoIter,
 };
@@ -22,7 +22,7 @@ struct Config {
 }
 
 struct ServerState {
-    file_index: Mutex<FileIndex>,
+    file_index: RwLock<FileIndex>,
 }
 
 #[tokio::main]
@@ -100,7 +100,7 @@ fn shutdown_server(server: Option<RegistryData>) {
 fn create_and_run_server(config: Config) -> std::io::Result<actix_web::dev::Server> {
     info!("starting server at: {:?}", config.address.to_socket_addrs());
     let server_state = actix_web::web::Data::new(ServerState {
-        file_index: Mutex::new(FileIndex::new(&config.index_path)),
+        file_index: RwLock::new(FileIndex::new(&config.index_path)),
     });
     let server = actix_web::HttpServer::new(move || {
         let cors = actix_cors::Cors::permissive();
@@ -156,7 +156,7 @@ type State = actix_web::web::Data<ServerState>;
 
 async fn get_files(state: State) -> actix_web::HttpResponse {
     info!("Get file request received");
-    let index = state.file_index.lock().unwrap();
+    let index = state.file_index.read().unwrap();
     let files = all_files(&index);
     let body = serde_json::to_string(&files).unwrap();
     actix_web::HttpResponse::Ok()
@@ -165,7 +165,7 @@ async fn get_files(state: State) -> actix_web::HttpResponse {
 }
 
 async fn get_tags(state: State) -> actix_web::HttpResponse {
-    let index = state.file_index.lock().unwrap();
+    let index = state.file_index.read().unwrap();
     let tags = index.tags();
     let body = serde_json::to_string(&tags).unwrap();
     actix_web::HttpResponse::Ok()
@@ -189,7 +189,7 @@ async fn get_files_by_tags(
     query: actix_web::web::Json<TagQuery>,
     state: State,
 ) -> actix_web::HttpResponse {
-    let index = state.file_index.lock().unwrap();
+    let index = state.file_index.read().unwrap();
     let data = &query.data;
     let files = if data.ty.is_empty() {
         index.files_of_tag(&data.tags)
@@ -226,7 +226,7 @@ async fn post_file(
                         content.push(each);
                     }
                 }
-                let mut index = state.file_index.lock().unwrap();
+                let mut index = state.file_index.write().unwrap();
                 if create_file(&mut index, file_name, &content).is_err() {
                     return Ok(actix_web::HttpResponse::InternalServerError().into());
                 }
@@ -242,7 +242,7 @@ async fn get_file_by_type(
 ) -> actix_web::Result<actix_web::HttpResponse> {
     let file_type = path.into_inner();
     info!("Get file by type request received: {}", file_type);
-    let index = state.file_index.lock().unwrap();
+    let index = state.file_index.read().unwrap();
     let files: Vec<FileData> = index
         .files_of_type(file_type)
         .into_iter()
@@ -258,7 +258,7 @@ async fn get_content(
     req: actix_web::HttpRequest,
     state: State,
 ) -> actix_web::Result<actix_files::NamedFile> {
-    let index = state.file_index.lock().unwrap();
+    let index = state.file_index.read().unwrap();
     let file_name: String = req.match_info().query("file_name").parse().unwrap();
     let file_id = file_name.trim().parse::<u64>().unwrap();
     info!("Get file request received: {}", file_name);
@@ -305,7 +305,7 @@ mod tests {
         fs::File,
         io::{Read, Write},
         path::PathBuf,
-        sync::Mutex,
+        sync::RwLock,
     };
 
     use crate::{
@@ -358,7 +358,7 @@ mod tests {
         let server = test::init_service(
             App::new()
                 .app_data(actix_web::web::Data::new(ServerState {
-                    file_index: Mutex::new(FileIndex::new(&PathBuf::from(TEST_INDEX))),
+                    file_index: RwLock::new(FileIndex::new(&PathBuf::from(TEST_INDEX))),
                 }))
                 .route("/file", web::post().to(post_file)),
         )
@@ -433,7 +433,7 @@ mod tests {
         let server = test::init_service(
             App::new()
                 .app_data(actix_web::web::Data::new(ServerState {
-                    file_index: Mutex::new(FileIndex::new(&test_index_path)),
+                    file_index: RwLock::new(FileIndex::new(&test_index_path)),
                 }))
                 .route("/files/{type}", web::get().to(get_file_by_type)),
         )
@@ -483,7 +483,7 @@ mod tests {
         let server = test::init_service(
             App::new()
                 .app_data(actix_web::web::Data::new(ServerState {
-                    file_index: Mutex::new(FileIndex::new(&test_index_path)),
+                    file_index: RwLock::new(FileIndex::new(&test_index_path)),
                 }))
                 .route("/tags", web::get().to(get_tags)),
         )
@@ -541,7 +541,7 @@ mod tests {
         let server = test::init_service(
             App::new()
                 .app_data(actix_web::web::Data::new(ServerState {
-                    file_index: Mutex::new(FileIndex::new(&test_index_path)),
+                    file_index: RwLock::new(FileIndex::new(&test_index_path)),
                 }))
                 .route("/query", web::post().to(get_files_by_tags)),
         )
