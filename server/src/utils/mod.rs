@@ -68,7 +68,7 @@ mod tests {
         let mut expected: Vec<FileMetadata> = files
             .into_iter()
             .map(|name| {
-                let path = test_storage.join(name);
+                let path = std::fs::canonicalize(test_storage.join(name)).unwrap();
                 let mut hasher = DefaultHasher::new();
                 path.hash(&mut hasher);
                 let id = hasher.finish();
@@ -123,7 +123,10 @@ mod tests {
             .iter()
             .map(|(path, tags)| {
                 create_nested_file(Path::new(path));
-                (PathBuf::from(path), tags.clone())
+                (
+                    std::fs::canonicalize(PathBuf::from(path)).unwrap(),
+                    tags.clone(),
+                )
             })
             .collect();
         let file_index = index_for_dir(index_path, test_storage);
