@@ -28,7 +28,7 @@ const TagSelector = () => {
     else if (result.isSuccess) {
         const selectors = sortedTags?.map((tag) => {
             return (
-                <Selector
+                <Selector testId='recieved-tag'
                     key={tag}
                     tag={tag}
                 />
@@ -47,10 +47,11 @@ export default TagSelector
 
 type SelectorProps = {
     tag: string;
+    testId: string;
 }
 
 const Selector = (props: SelectorProps) => {
-    const tag = props.tag;
+    const { tag, testId } = props;
     const enabled = useSelector((state: RootState) => state.tags.selectedTags.includes(tag));
     const dispatch = useDispatch();
     const toggleSwitch = (selected: boolean) => {
@@ -62,7 +63,7 @@ const Selector = (props: SelectorProps) => {
         }
     };
     return (
-        <View style={styles.switch_container}>
+        <View testID={testId} style={styles.switch_container}>
             <Text>{props.tag}</Text>
             <Switch
                 trackColor={{ false: '#767577', true: '#81b0ff' }}

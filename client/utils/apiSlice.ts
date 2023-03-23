@@ -1,3 +1,4 @@
+import { fetch } from 'cross-fetch';
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import config from '../config.json';
 
@@ -27,7 +28,7 @@ export function fileContentUrl(file: Metadata): string {
 
 export const apiSlice = createApi({
     reducerPath: 'api',
-    baseQuery: fetchBaseQuery({ baseUrl: config.SERVER_URL }),
+    baseQuery: fetchBaseQuery({ baseUrl: config.SERVER_URL, fetchFn: fetch }),
     endpoints: (builder) => ({
         getTags: builder.query<string[], void>({
             query: () => '/tags'
