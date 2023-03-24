@@ -33,7 +33,7 @@ test('renders component', async () => {
             <TagSelector />
         </Provider>
     );
-    const re = await screen.findByText('tag 1');
+    const re = await screen.findByTestId('recieved-tag');
     expect(re).toBeTruthy();
     expect(screen.toJSON()).toMatchSnapshot()
 });

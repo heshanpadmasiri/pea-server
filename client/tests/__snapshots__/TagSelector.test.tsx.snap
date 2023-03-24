@@ -16,6 +16,7 @@ exports[`renders component 1`] = `
         "flex": 1,
       }
     }
+    testID="recieved-tag"
   >
     <View>
       <View
@@ -27,7 +28,6 @@ exports[`renders component 1`] = `
             "justifyContent": "space-between",
           }
         }
-        testID="recieved-tag"
       >
         <Text>
           tag 1
@@ -64,7 +64,6 @@ exports[`renders component 1`] = `
             "justifyContent": "space-between",
           }
         }
-        testID="recieved-tag"
       >
         <Text>
           tag 2

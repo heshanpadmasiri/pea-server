@@ -28,13 +28,13 @@ const TagSelector = () => {
     else if (result.isSuccess) {
         const selectors = sortedTags?.map((tag) => {
             return (
-                <Selector testId='recieved-tag'
+                <Selector
                     key={tag}
                     tag={tag}
                 />
             )
         })
-        content = (<ScrollView style={styles.tag_selector}>{selectors}</ScrollView>);
+        content = (<ScrollView testID='recieved-tag' style={styles.tag_selector}>{selectors}</ScrollView>);
     }
     return (
         <View style={styles.container}>
@@ -47,11 +47,10 @@ export default TagSelector
 
 type SelectorProps = {
     tag: string;
-    testId: string;
 }
 
 const Selector = (props: SelectorProps) => {
-    const { tag, testId } = props;
+    const { tag } = props;
     const enabled = useSelector((state: RootState) => state.tags.selectedTags.includes(tag));
     const dispatch = useDispatch();
     const toggleSwitch = (selected: boolean) => {
@@ -63,7 +62,7 @@ const Selector = (props: SelectorProps) => {
         }
     };
     return (
-        <View testID={testId} style={styles.switch_container}>
+        <View style={styles.switch_container}>
             <Text>{props.tag}</Text>
             <Switch
                 trackColor={{ false: '#767577', true: '#81b0ff' }}
