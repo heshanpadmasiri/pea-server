@@ -4,7 +4,7 @@ import styles from '../utils/styles';
 import TagSelector from './TagSelector';
 
 export default function AllFiles() {
-    let result = getAllFiles();
+    const result = getAllFiles();
     let content;
 
     if (result.isLoading) {

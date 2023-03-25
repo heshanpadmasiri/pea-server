@@ -7,7 +7,7 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import { getFilesByType } from '../../utils/fileFiltering';
 
 export default function VideoPlayList() {
-    let result = getFilesByType('mp4');
+    const result = getFilesByType('mp4');
     let content;
     if (result.isLoading) {
         content = (

@@ -3,7 +3,7 @@ import { getFilesByType } from '../utils/fileFiltering';
 import styles from '../utils/styles';
 import TagSelector from './TagSelector';
 export default function PdfFiles() {
-    let result = getFilesByType('pdf');
+    const result = getFilesByType('pdf');
     let content;
     if (result.isLoading) {
         content = (
