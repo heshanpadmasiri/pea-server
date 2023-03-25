@@ -15,6 +15,12 @@ jobs:
         working-directory: ./client
     steps:
       - uses: actions/checkout@v2
+      - name: create-config
+        uses: jsdaniell/create-json@v1.2.2
+        with:
+          name: "config.json"
+          json: '{"SERVER_URL":"http://localhost:8080"}'
+          dir: 'client'
       - name: Run Tests
         run: |
           npm install
