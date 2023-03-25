@@ -15,9 +15,10 @@ export const handlers = [
 
 const server = setupServer(...handlers);
 
+const TIMEOUT = 50000;
 beforeAll(() => server.listen());
 afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
+afterAll(() => server.close(), TIMEOUT);
 test('renders component', async () => {
     const store = setupStore();
     render(
@@ -25,6 +26,6 @@ test('renders component', async () => {
             <TagSelector />
         </Provider>
     );
-    await screen.findByTestId('recieved-tag', { timeout: 50000 });
+    await screen.findByTestId('recieved-tag', {}, { timeout: TIMEOUT });
     expect(screen.toJSON()).toMatchSnapshot()
-});
+}, TIMEOUT);
