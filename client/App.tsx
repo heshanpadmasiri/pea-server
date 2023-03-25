@@ -7,11 +7,12 @@ import styles from './utils/styles';
 import VideoFiles from './Components/VideoFiles/VideoFiles';
 import ImageFiles from './Components/ImageFiles/ImageFiles';
 import PdfFiles from './Components/PdfFiles';
-import store from './utils/store';
 import { Provider } from 'react-redux';
+import { setupStore } from './utils/store';
 
 export default function App() {
     const Tab = createBottomTabNavigator();
+    const store = setupStore();
     return (
         <Provider store={store}>
             <NavigationContainer>

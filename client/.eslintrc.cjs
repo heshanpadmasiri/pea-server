@@ -16,6 +16,6 @@ module.exports = {
         'linebreak-style': ['error', 'unix'],
         quotes: ['error', 'single'],
     },
-    ignorePatterns: ['node_modules', 'web-build', 'babel.config.js'],
+    ignorePatterns: ['node_modules', 'web-build', 'babel.config.js', 'setupJest.js'],
     root: true,
 };

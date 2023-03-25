@@ -34,7 +34,7 @@ const TagSelector = () => {
                 />
             )
         })
-        content = (<ScrollView style={styles.tag_selector}>{selectors}</ScrollView>);
+        content = (<ScrollView testID='recieved-tag' style={styles.tag_selector}>{selectors}</ScrollView>);
     }
     return (
         <View style={styles.container}>
@@ -50,7 +50,7 @@ type SelectorProps = {
 }
 
 const Selector = (props: SelectorProps) => {
-    const tag = props.tag;
+    const { tag } = props;
     const enabled = useSelector((state: RootState) => state.tags.selectedTags.includes(tag));
     const dispatch = useDispatch();
     const toggleSwitch = (selected: boolean) => {

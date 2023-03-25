@@ -1,20 +1,24 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { PreloadedState, combineReducers, configureStore } from '@reduxjs/toolkit';
 import tagReducer from './tagSlice';
 import slideShowReducer from './slideShowSlice';
 import { apiSlice } from './apiSlice';
 
-const store = configureStore({
-    reducer: {
-        tags: tagReducer,
-        slideShow: slideShowReducer,
-        [apiSlice.reducerPath]: apiSlice.reducer
-    },
-    middleware: getDefaultMiddleware => getDefaultMiddleware(
-        { serializableCheck: false }
-    ).concat(apiSlice.middleware)
+const rootReducer = combineReducers({
+    tags: tagReducer,
+    slideShow: slideShowReducer,
+    [apiSlice.reducerPath]: apiSlice.reducer
 });
 
-export type RootState = ReturnType<typeof store.getState>
-export type AppDispatch = typeof store.dispatch
+export const setupStore = (preloadedState?: PreloadedState<RootState>) => {
+    return configureStore({
+        reducer: rootReducer,
+        middleware: getDefaultMiddleware => getDefaultMiddleware(
+            { serializableCheck: false }
+        ).concat(apiSlice.middleware),
+        preloadedState
+    })
+};
 
-export default store;
+export type RootState = ReturnType<typeof rootReducer>
+export type AppStore = ReturnType<typeof setupStore>
+export type AppDispatch = AppStore['dispatch']

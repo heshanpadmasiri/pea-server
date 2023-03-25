@@ -4,13 +4,10 @@
             "path": "choreo"
         },
         {
-            "path": "mobile-client"
+            "path": "client"
         },
         {
-            "path": "pea-client"
-        },
-        {
-            "path": "pea-src"
+            "path": "server"
         }
     ]
 }
