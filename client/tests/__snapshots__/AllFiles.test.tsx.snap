@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`renders component 1`] = `
+exports[`AllFiles renders component 1`] = `
 <RCTSafeAreaView
   style={
     {
@@ -58,6 +58,7 @@ exports[`renders component 1`] = `
                 },
               ]
             }
+            testID="switch-tag 1"
             thumbTintColor="#f4f3f4"
             tintColor="#767577"
             value={false}
@@ -94,6 +95,7 @@ exports[`renders component 1`] = `
                 },
               ]
             }
+            testID="switch-tag 2"
             thumbTintColor="#f4f3f4"
             tintColor="#767577"
             value={false}
@@ -162,6 +164,178 @@ exports[`renders component 1`] = `
           file 1.txt
         </Text>
       </View>
+      <View
+        onFocusCapture={[Function]}
+        onLayout={[Function]}
+        style={null}
+      >
+        <Text>
+          file 2.txt
+        </Text>
+      </View>
+      <View
+        onFocusCapture={[Function]}
+        onLayout={[Function]}
+        style={null}
+      >
+        <Text>
+          file 3.txt
+        </Text>
+      </View>
+    </View>
+  </RCTScrollView>
+</RCTSafeAreaView>
+`;
+
+exports[`AllFiles tag selection works 1`] = `
+<RCTSafeAreaView
+  style={
+    {
+      "flex": 5,
+      "paddingHorizontal": 10,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "backgroundColor": "#ecf0f1",
+        "flex": 1,
+        "justifyContent": "center",
+      }
+    }
+  >
+    <RCTScrollView
+      style={
+        {
+          "flex": 1,
+        }
+      }
+      testID="received-tag"
+    >
+      <View>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flex": 1,
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+            }
+          }
+        >
+          <Text>
+            tag 1
+          </Text>
+          <RCTSwitch
+            accessibilityRole="switch"
+            onChange={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            onTintColor="#81b0ff"
+            style={
+              [
+                {
+                  "height": 31,
+                  "width": 51,
+                },
+                {
+                  "backgroundColor": "#3e3e3e",
+                  "borderRadius": 16,
+                },
+              ]
+            }
+            testID="switch-tag 1"
+            thumbTintColor="#f5dd4b"
+            tintColor="#767577"
+            value={true}
+          />
+        </View>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flex": 1,
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+            }
+          }
+        >
+          <Text>
+            tag 2
+          </Text>
+          <RCTSwitch
+            accessibilityRole="switch"
+            onChange={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            onTintColor="#81b0ff"
+            style={
+              [
+                {
+                  "height": 31,
+                  "width": 51,
+                },
+                {
+                  "backgroundColor": "#3e3e3e",
+                  "borderRadius": 16,
+                },
+              ]
+            }
+            testID="switch-tag 2"
+            thumbTintColor="#f4f3f4"
+            tintColor="#767577"
+            value={false}
+          />
+        </View>
+      </View>
+    </RCTScrollView>
+  </View>
+  <RCTScrollView
+    data={
+      [
+        {
+          "id": "2",
+          "name": "file 2.txt",
+          "tags": [
+            "tag 1",
+          ],
+          "ty": "txt",
+        },
+        {
+          "id": "3",
+          "name": "file 3.txt",
+          "tags": [
+            "tag 1",
+            "tag 2",
+          ],
+          "ty": "txt",
+        },
+      ]
+    }
+    getItem={[Function]}
+    getItemCount={[Function]}
+    keyExtractor={[Function]}
+    onContentSizeChange={[Function]}
+    onLayout={[Function]}
+    onMomentumScrollBegin={[Function]}
+    onMomentumScrollEnd={[Function]}
+    onScroll={[Function]}
+    onScrollBeginDrag={[Function]}
+    onScrollEndDrag={[Function]}
+    removeClippedSubviews={false}
+    renderItem={[Function]}
+    scrollEventThrottle={50}
+    stickyHeaderIndices={[]}
+    style={
+      {
+        "flex": 1,
+      }
+    }
+    testID="received-files"
+    viewabilityConfigCallbackPairs={[]}
+  >
+    <View>
       <View
         onFocusCapture={[Function]}
         onLayout={[Function]}
