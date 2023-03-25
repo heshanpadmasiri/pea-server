@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { View, FlatList, Image, TouchableOpacity, Text, Modal, Pressable, Dimensions } from 'react-native';
-import { fileContentUrl, Metadata, QueryResult, useGetFilesByConditionQuery, useGetFilesByTypeQuery } from '../../utils/apiSlice';
+import { fileContentUrl, Metadata } from '../../utils/apiSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../utils/store';
 import { endSlideShow, setCurrentIndex, setMaxIndex, setTouchPoint, startSlideShow } from '../../utils/slideShowSlice';
+import { getFilesByTypes } from '../../utils/fileFiltering';
 
 const ImageGrid = () => {
-    const IMAGE_TYPES = ['jpeg', 'jpg', 'png', 'gif', 'bmp', 'tiff', 'tif', 'svg', 'webp'];
     const SLIDE_SHOW_INTERVAL = 30000;
     const inSlideShow = useSelector((state: RootState) => state.slideShow.inSlideShow);
     const lastTouchX = useSelector((state: RootState) => state.slideShow.lastTouchX);
@@ -15,14 +15,8 @@ const ImageGrid = () => {
     const dispatch = useDispatch();
     const maxWidth = Dimensions.get('window').width;
     const maxHeight = Dimensions.get('window').height;
-    const selectedTags = useSelector((state: RootState) => state.tages.selectedTags);
-    let resultArray: QueryResult[];
-    if (selectedTags.length > 0) {
-        resultArray = IMAGE_TYPES.map((ty) => { return useGetFilesByConditionQuery({ type: ty, tags: selectedTags }); }) as QueryResult[];
-    }
-    else {
-        resultArray = IMAGE_TYPES.map((each) => { return useGetFilesByTypeQuery(each); }) as QueryResult[];
-    }
+    const IMAGE_TYPES = ['jpeg', 'jpg', 'png', 'gif', 'bmp', 'tiff', 'tif', 'svg', 'webp'];
+    const resultArray = getFilesByTypes(IMAGE_TYPES);
 
     useEffect(() => {
         if (!inSlideShow) {
