@@ -34,7 +34,7 @@ const TagSelector = () => {
                 />
             )
         })
-        content = (<ScrollView testID='recieved-tag' style={styles.tag_selector}>{selectors}</ScrollView>);
+        content = (<ScrollView testID='received-tag' style={styles.tag_selector}>{selectors}</ScrollView>);
     }
     return (
         <View style={styles.container}>
