@@ -1,19 +1,10 @@
 import { Text, FlatList, SafeAreaView } from 'react-native';
-import { useSelector } from 'react-redux';
-import { QueryResult, useGetFilesByConditionQuery, useGetFilesQuery } from '../utils/apiSlice';
-import { RootState } from '../utils/store';
+import { getAllFiles } from '../utils/fileFiltering';
 import styles from '../utils/styles';
 import TagSelector from './TagSelector';
 
 export default function AllFiles() {
-    const selectedTags = useSelector((state: RootState) => state.tages.selectedTags);
-    let result: QueryResult;
-    if (selectedTags.length > 0) {
-        result = useGetFilesByConditionQuery({ type: '', tags: selectedTags }) as QueryResult;
-    }
-    else {
-        result = useGetFilesQuery() as QueryResult;
-    }
+    let result = getAllFiles();
     let content;
 
     if (result.isLoading) {

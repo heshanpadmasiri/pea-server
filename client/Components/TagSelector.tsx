@@ -51,7 +51,7 @@ type SelectorProps = {
 
 const Selector = (props: SelectorProps) => {
     const tag = props.tag;
-    const enabled = useSelector((state: RootState) => state.tages.selectedTags.includes(tag));
+    const enabled = useSelector((state: RootState) => state.tags.selectedTags.includes(tag));
     const dispatch = useDispatch();
     const toggleSwitch = (selected: boolean) => {
         if (selected) {

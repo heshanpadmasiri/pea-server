@@ -1,18 +1,9 @@
 import { FlatList, SafeAreaView, Text } from 'react-native';
-import { useSelector } from 'react-redux';
-import { QueryResult, useGetFilesByConditionQuery, useGetFilesByTypeQuery } from '../utils/apiSlice';
-import { RootState } from '../utils/store';
+import { getFilesByType } from '../utils/fileFiltering';
 import styles from '../utils/styles';
 import TagSelector from './TagSelector';
 export default function PdfFiles() {
-    const selectedTags = useSelector((state: RootState) => state.tages.selectedTags);
-    let result: QueryResult;
-    if (selectedTags.length > 0) {
-        result = useGetFilesByConditionQuery({ type: 'pdf', tags: selectedTags }) as QueryResult;
-    }
-    else {
-        result = useGetFilesByTypeQuery('pdf') as QueryResult;
-    }
+    let result = getFilesByType('pdf');
     let content;
     if (result.isLoading) {
         content = (

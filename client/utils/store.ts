@@ -5,7 +5,7 @@ import { apiSlice } from './apiSlice';
 
 const store = configureStore({
     reducer: {
-        tages: tagReducer,
+        tags: tagReducer,
         slideShow: slideShowReducer,
         [apiSlice.reducerPath]: apiSlice.reducer
     },
