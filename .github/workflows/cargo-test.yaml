@@ -8,8 +8,27 @@ on:
   workflow_dispatch:
 
 jobs:
+  changes:
+      runs-on: ubuntu-latest
+      name: Check changes
+      outputs:
+        functions: ${{ steps.filter.outputs.functions }}
+      steps:
+        - uses: actions/checkout@v3
+          name: Checkout project to determine changed files
+          with:
+            fetch-depth: 50
+        - uses: dorny/paths-filter@v2
+          id: filter
+          with:
+            base: main
+            filters: |
+              src:
+                - 'server/**'
   test:
     runs-on: ${{ matrix.os }}
+    needs: [changes]
+    if: ${{ needs.changes.outputs.functions == 'true' }}
     defaults:
       run:
         working-directory: ./server
@@ -19,6 +38,15 @@ jobs:
         rust: [stable]
     steps:
       - uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            src:
+              - 'server/**'
+        # run only if some file in 'src' folder was changed
+      - if: steps.changes.outputs.src == 'true'
+        run: ...
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
