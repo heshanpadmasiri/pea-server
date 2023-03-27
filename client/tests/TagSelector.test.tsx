@@ -26,6 +26,6 @@ test('renders component', async () => {
             <TagSelector />
         </Provider>
     );
-    await screen.findByTestId('recieved-tag', {}, { timeout: TIMEOUT });
+    await screen.findByTestId('received-tag', {}, { timeout: TIMEOUT });
     expect(screen.toJSON()).toMatchSnapshot()
 }, TIMEOUT);

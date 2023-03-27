@@ -16,7 +16,7 @@ exports[`renders component 1`] = `
         "flex": 1,
       }
     }
-    testID="recieved-tag"
+    testID="received-tag"
   >
     <View>
       <View
@@ -50,6 +50,7 @@ exports[`renders component 1`] = `
               },
             ]
           }
+          testID="switch-tag 1"
           thumbTintColor="#f4f3f4"
           tintColor="#767577"
           value={false}
@@ -86,6 +87,7 @@ exports[`renders component 1`] = `
               },
             ]
           }
+          testID="switch-tag 2"
           thumbTintColor="#f4f3f4"
           tintColor="#767577"
           value={false}

@@ -20,7 +20,7 @@ export default function AllFiles() {
     }
     else if (result.isSuccess) {
         content = (
-            <FlatList style={{ flex: 1 }} data={result.data} renderItem={({ item }) => <Text>{item.name}</Text>} />
+            <FlatList testID='received-files'style={{ flex: 1 }} data={result.data} renderItem={({ item }) => <Text>{item.name}</Text>} />
         )
     }
     return (

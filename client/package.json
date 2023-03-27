@@ -10,7 +10,7 @@
     "test": "jest"
   },
   "jest": {
-    "preset": "react-native",
+    "preset": "jest-expo",
     "setupFiles": [
         "./setupJest.js"
     ],
