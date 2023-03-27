@@ -30,7 +30,7 @@ export default function VideoPlayList() {
             }
         });
         content = (
-            <FlatList data={thumbnails} renderItem={({ item }) => <ThumbnailCard {...item} />} />
+            <FlatList testID='received-files' data={thumbnails} renderItem={({ item }) => <ThumbnailCard {...item} />} />
         )
     }
     return (

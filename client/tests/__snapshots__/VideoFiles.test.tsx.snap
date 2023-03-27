@@ -1,0 +1,703 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`VideoFiles renders component 1`] = `
+<RCTSafeAreaView
+  style={
+    {
+      "flex": 5,
+      "paddingHorizontal": 10,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "backgroundColor": "#ecf0f1",
+        "flex": 1,
+        "justifyContent": "center",
+      }
+    }
+  >
+    <RCTScrollView
+      style={
+        {
+          "flex": 1,
+        }
+      }
+      testID="received-tag"
+    >
+      <View>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flex": 1,
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+            }
+          }
+        >
+          <Text>
+            tag 1
+          </Text>
+          <RCTSwitch
+            accessibilityRole="switch"
+            onChange={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            onTintColor="#81b0ff"
+            style={
+              [
+                {
+                  "height": 31,
+                  "width": 51,
+                },
+                {
+                  "backgroundColor": "#3e3e3e",
+                  "borderRadius": 16,
+                },
+              ]
+            }
+            testID="switch-tag 1"
+            thumbTintColor="#f4f3f4"
+            tintColor="#767577"
+            value={false}
+          />
+        </View>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flex": 1,
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+            }
+          }
+        >
+          <Text>
+            tag 2
+          </Text>
+          <RCTSwitch
+            accessibilityRole="switch"
+            onChange={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            onTintColor="#81b0ff"
+            style={
+              [
+                {
+                  "height": 31,
+                  "width": 51,
+                },
+                {
+                  "backgroundColor": "#3e3e3e",
+                  "borderRadius": 16,
+                },
+              ]
+            }
+            testID="switch-tag 2"
+            thumbTintColor="#f4f3f4"
+            tintColor="#767577"
+            value={false}
+          />
+        </View>
+      </View>
+    </RCTScrollView>
+  </View>
+  <View
+    style={
+      {
+        "flex": 5,
+        "paddingHorizontal": 10,
+      }
+    }
+  >
+    <RCTScrollView
+      data={
+        [
+          {
+            "id": "1",
+            "index": 0,
+            "title": "file 1.mp4",
+            "url": "http://192.168.8.176:8080/content/1",
+          },
+          {
+            "id": "2",
+            "index": 1,
+            "title": "file 2.mp4",
+            "url": "http://192.168.8.176:8080/content/2",
+          },
+          {
+            "id": "3",
+            "index": 2,
+            "title": "file 3.mp4",
+            "url": "http://192.168.8.176:8080/content/3",
+          },
+        ]
+      }
+      getItem={[Function]}
+      getItemCount={[Function]}
+      keyExtractor={[Function]}
+      onContentSizeChange={[Function]}
+      onLayout={[Function]}
+      onMomentumScrollBegin={[Function]}
+      onMomentumScrollEnd={[Function]}
+      onScroll={[Function]}
+      onScrollBeginDrag={[Function]}
+      onScrollEndDrag={[Function]}
+      removeClippedSubviews={false}
+      renderItem={[Function]}
+      scrollEventThrottle={50}
+      stickyHeaderIndices={[]}
+      testID="received-files"
+      viewabilityConfigCallbackPairs={[]}
+    >
+      <View>
+        <View
+          onFocusCapture={[Function]}
+          onLayout={[Function]}
+          style={null}
+        >
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "backgroundColor": "white",
+                "height": 220,
+                "marginBottom": 10,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "flex": 1,
+                }
+              }
+            >
+              file 1.mp4
+            </Text>
+            <View
+              pointerEvents="box-none"
+              style={
+                {
+                  "alignSelf": "center",
+                  "height": 200,
+                  "overflow": "hidden",
+                  "width": 320,
+                }
+              }
+            >
+              <ViewManagerAdapter_ExpoVideoView
+                onError={[Function]}
+                onFullscreenUpdate={[Function]}
+                onLoad={[Function]}
+                onLoadStart={[Function]}
+                onReadyForDisplay={[Function]}
+                onStatusUpdate={[Function]}
+                proxiedProperties={
+                  {
+                    "resizeMode": "mock",
+                    "source": {
+                      "headers": undefined,
+                      "overridingExtension": null,
+                      "uri": "http://192.168.8.176:8080/content/1",
+                    },
+                    "status": {
+                      "isLooping": true,
+                    },
+                    "useNativeControls": true,
+                  }
+                }
+                style={
+                  {
+                    "bottom": 0,
+                    "left": 0,
+                    "position": "absolute",
+                    "right": 0,
+                    "top": 0,
+                  }
+                }
+                videoStyle={
+                  {
+                    "bottom": 0,
+                    "left": 0,
+                    "position": "absolute",
+                    "right": 0,
+                    "top": 0,
+                  }
+                }
+              />
+            </View>
+          </View>
+        </View>
+        <View
+          onFocusCapture={[Function]}
+          onLayout={[Function]}
+          style={null}
+        >
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "backgroundColor": "white",
+                "height": 220,
+                "marginBottom": 10,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "flex": 1,
+                }
+              }
+            >
+              file 2.mp4
+            </Text>
+            <View
+              pointerEvents="box-none"
+              style={
+                {
+                  "alignSelf": "center",
+                  "height": 200,
+                  "overflow": "hidden",
+                  "width": 320,
+                }
+              }
+            >
+              <ViewManagerAdapter_ExpoVideoView
+                onError={[Function]}
+                onFullscreenUpdate={[Function]}
+                onLoad={[Function]}
+                onLoadStart={[Function]}
+                onReadyForDisplay={[Function]}
+                onStatusUpdate={[Function]}
+                proxiedProperties={
+                  {
+                    "resizeMode": "mock",
+                    "source": {
+                      "headers": undefined,
+                      "overridingExtension": null,
+                      "uri": "http://192.168.8.176:8080/content/2",
+                    },
+                    "status": {
+                      "isLooping": true,
+                    },
+                    "useNativeControls": true,
+                  }
+                }
+                style={
+                  {
+                    "bottom": 0,
+                    "left": 0,
+                    "position": "absolute",
+                    "right": 0,
+                    "top": 0,
+                  }
+                }
+                videoStyle={
+                  {
+                    "bottom": 0,
+                    "left": 0,
+                    "position": "absolute",
+                    "right": 0,
+                    "top": 0,
+                  }
+                }
+              />
+            </View>
+          </View>
+        </View>
+        <View
+          onFocusCapture={[Function]}
+          onLayout={[Function]}
+          style={null}
+        >
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "backgroundColor": "white",
+                "height": 220,
+                "marginBottom": 10,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "flex": 1,
+                }
+              }
+            >
+              file 3.mp4
+            </Text>
+            <View
+              pointerEvents="box-none"
+              style={
+                {
+                  "alignSelf": "center",
+                  "height": 200,
+                  "overflow": "hidden",
+                  "width": 320,
+                }
+              }
+            >
+              <ViewManagerAdapter_ExpoVideoView
+                onError={[Function]}
+                onFullscreenUpdate={[Function]}
+                onLoad={[Function]}
+                onLoadStart={[Function]}
+                onReadyForDisplay={[Function]}
+                onStatusUpdate={[Function]}
+                proxiedProperties={
+                  {
+                    "resizeMode": "mock",
+                    "source": {
+                      "headers": undefined,
+                      "overridingExtension": null,
+                      "uri": "http://192.168.8.176:8080/content/3",
+                    },
+                    "status": {
+                      "isLooping": true,
+                    },
+                    "useNativeControls": true,
+                  }
+                }
+                style={
+                  {
+                    "bottom": 0,
+                    "left": 0,
+                    "position": "absolute",
+                    "right": 0,
+                    "top": 0,
+                  }
+                }
+                videoStyle={
+                  {
+                    "bottom": 0,
+                    "left": 0,
+                    "position": "absolute",
+                    "right": 0,
+                    "top": 0,
+                  }
+                }
+              />
+            </View>
+          </View>
+        </View>
+      </View>
+    </RCTScrollView>
+  </View>
+</RCTSafeAreaView>
+`;
+
+exports[`VideoFiles tag selection works 1`] = `
+<RCTSafeAreaView
+  style={
+    {
+      "flex": 5,
+      "paddingHorizontal": 10,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "backgroundColor": "#ecf0f1",
+        "flex": 1,
+        "justifyContent": "center",
+      }
+    }
+  >
+    <RCTScrollView
+      style={
+        {
+          "flex": 1,
+        }
+      }
+      testID="received-tag"
+    >
+      <View>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flex": 1,
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+            }
+          }
+        >
+          <Text>
+            tag 1
+          </Text>
+          <RCTSwitch
+            accessibilityRole="switch"
+            onChange={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            onTintColor="#81b0ff"
+            style={
+              [
+                {
+                  "height": 31,
+                  "width": 51,
+                },
+                {
+                  "backgroundColor": "#3e3e3e",
+                  "borderRadius": 16,
+                },
+              ]
+            }
+            testID="switch-tag 1"
+            thumbTintColor="#f5dd4b"
+            tintColor="#767577"
+            value={true}
+          />
+        </View>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flex": 1,
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+            }
+          }
+        >
+          <Text>
+            tag 2
+          </Text>
+          <RCTSwitch
+            accessibilityRole="switch"
+            onChange={[Function]}
+            onResponderTerminationRequest={[Function]}
+            onStartShouldSetResponder={[Function]}
+            onTintColor="#81b0ff"
+            style={
+              [
+                {
+                  "height": 31,
+                  "width": 51,
+                },
+                {
+                  "backgroundColor": "#3e3e3e",
+                  "borderRadius": 16,
+                },
+              ]
+            }
+            testID="switch-tag 2"
+            thumbTintColor="#f4f3f4"
+            tintColor="#767577"
+            value={false}
+          />
+        </View>
+      </View>
+    </RCTScrollView>
+  </View>
+  <View
+    style={
+      {
+        "flex": 5,
+        "paddingHorizontal": 10,
+      }
+    }
+  >
+    <RCTScrollView
+      data={
+        [
+          {
+            "id": "2",
+            "index": 0,
+            "title": "file 2.mp4",
+            "url": "http://192.168.8.176:8080/content/2",
+          },
+          {
+            "id": "3",
+            "index": 1,
+            "title": "file 3.mp4",
+            "url": "http://192.168.8.176:8080/content/3",
+          },
+        ]
+      }
+      getItem={[Function]}
+      getItemCount={[Function]}
+      keyExtractor={[Function]}
+      onContentSizeChange={[Function]}
+      onLayout={[Function]}
+      onMomentumScrollBegin={[Function]}
+      onMomentumScrollEnd={[Function]}
+      onScroll={[Function]}
+      onScrollBeginDrag={[Function]}
+      onScrollEndDrag={[Function]}
+      removeClippedSubviews={false}
+      renderItem={[Function]}
+      scrollEventThrottle={50}
+      stickyHeaderIndices={[]}
+      testID="received-files"
+      viewabilityConfigCallbackPairs={[]}
+    >
+      <View>
+        <View
+          onFocusCapture={[Function]}
+          onLayout={[Function]}
+          style={null}
+        >
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "backgroundColor": "white",
+                "height": 220,
+                "marginBottom": 10,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "flex": 1,
+                }
+              }
+            >
+              file 2.mp4
+            </Text>
+            <View
+              pointerEvents="box-none"
+              style={
+                {
+                  "alignSelf": "center",
+                  "height": 200,
+                  "overflow": "hidden",
+                  "width": 320,
+                }
+              }
+            >
+              <ViewManagerAdapter_ExpoVideoView
+                onError={[Function]}
+                onFullscreenUpdate={[Function]}
+                onLoad={[Function]}
+                onLoadStart={[Function]}
+                onReadyForDisplay={[Function]}
+                onStatusUpdate={[Function]}
+                proxiedProperties={
+                  {
+                    "resizeMode": "mock",
+                    "source": {
+                      "headers": undefined,
+                      "overridingExtension": null,
+                      "uri": "http://192.168.8.176:8080/content/2",
+                    },
+                    "status": {
+                      "isLooping": true,
+                    },
+                    "useNativeControls": true,
+                  }
+                }
+                style={
+                  {
+                    "bottom": 0,
+                    "left": 0,
+                    "position": "absolute",
+                    "right": 0,
+                    "top": 0,
+                  }
+                }
+                videoStyle={
+                  {
+                    "bottom": 0,
+                    "left": 0,
+                    "position": "absolute",
+                    "right": 0,
+                    "top": 0,
+                  }
+                }
+              />
+            </View>
+          </View>
+        </View>
+        <View
+          onFocusCapture={[Function]}
+          onLayout={[Function]}
+          style={null}
+        >
+          <View
+            style={
+              {
+                "alignItems": "center",
+                "backgroundColor": "white",
+                "height": 220,
+                "marginBottom": 10,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "flex": 1,
+                }
+              }
+            >
+              file 3.mp4
+            </Text>
+            <View
+              pointerEvents="box-none"
+              style={
+                {
+                  "alignSelf": "center",
+                  "height": 200,
+                  "overflow": "hidden",
+                  "width": 320,
+                }
+              }
+            >
+              <ViewManagerAdapter_ExpoVideoView
+                onError={[Function]}
+                onFullscreenUpdate={[Function]}
+                onLoad={[Function]}
+                onLoadStart={[Function]}
+                onReadyForDisplay={[Function]}
+                onStatusUpdate={[Function]}
+                proxiedProperties={
+                  {
+                    "resizeMode": "mock",
+                    "source": {
+                      "headers": undefined,
+                      "overridingExtension": null,
+                      "uri": "http://192.168.8.176:8080/content/3",
+                    },
+                    "status": {
+                      "isLooping": true,
+                    },
+                    "useNativeControls": true,
+                  }
+                }
+                style={
+                  {
+                    "bottom": 0,
+                    "left": 0,
+                    "position": "absolute",
+                    "right": 0,
+                    "top": 0,
+                  }
+                }
+                videoStyle={
+                  {
+                    "bottom": 0,
+                    "left": 0,
+                    "position": "absolute",
+                    "right": 0,
+                    "top": 0,
+                  }
+                }
+              />
+            </View>
+          </View>
+        </View>
+      </View>
+    </RCTScrollView>
+  </View>
+</RCTSafeAreaView>
+`;
