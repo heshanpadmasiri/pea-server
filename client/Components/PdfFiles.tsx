@@ -1,6 +1,7 @@
 import { FlatList, SafeAreaView, Text } from 'react-native';
 import { getFilesByType } from '../utils/fileFiltering';
 import styles from '../utils/styles';
+import SearchBar from './SearchBar';
 import TagSelector from './TagSelector';
 export default function PdfFiles() {
     const result = getFilesByType('pdf');
@@ -23,6 +24,7 @@ export default function PdfFiles() {
     }
     return (
         <SafeAreaView style={styles.safeArea}>
+            <SearchBar/>
             <TagSelector />
             {content}
         </SafeAreaView>
