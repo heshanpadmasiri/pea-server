@@ -1,11 +1,13 @@
 import { PreloadedState, combineReducers, configureStore } from '@reduxjs/toolkit';
 import tagReducer from './tagSlice';
 import slideShowReducer from './slideShowSlice';
+import searchReducer from './searchSlice';
 import { apiSlice } from './apiSlice';
 
 const rootReducer = combineReducers({
     tags: tagReducer,
     slideShow: slideShowReducer,
+    search: searchReducer,
     [apiSlice.reducerPath]: apiSlice.reducer
 });
 

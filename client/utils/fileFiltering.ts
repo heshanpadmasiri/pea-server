@@ -5,12 +5,14 @@ import { useGetFilesByConditionQuery, useGetFilesByTypeQuery } from './apiSlice'
 
 export function getFilesByType(type: string): QueryResult {
     const selectedTags = useSelector((state: RootState) => state.tags.selectedTags);
+    let queryResult: QueryResult;
     if (selectedTags.length > 0) {
-        return useGetFilesByConditionQuery({ type, tags: selectedTags }) as QueryResult;
+        queryResult = useGetFilesByConditionQuery({ type, tags: selectedTags }) as QueryResult;
     }
     else {
-        return useGetFilesByTypeQuery(type) as QueryResult;
+        queryResult = useGetFilesByTypeQuery(type) as QueryResult;
     }
+    return filterBySearchQuery(queryResult);
 }
 
 export function getFilesByTypes(types: string[]): QueryResult[] {
@@ -19,10 +21,24 @@ export function getFilesByTypes(types: string[]): QueryResult[] {
 
 export function getAllFiles(): QueryResult {
     const selectedTags = useSelector((state: RootState) => state.tags.selectedTags);
+    let queryResult: QueryResult;
     if (selectedTags.length > 0) {
-        return useGetFilesByConditionQuery({ type: '', tags: selectedTags }) as QueryResult;
+        queryResult = useGetFilesByConditionQuery({ type: '', tags: selectedTags }) as QueryResult;
     }
     else {
-        return useGetFilesQuery() as QueryResult;
+        queryResult = useGetFilesQuery() as QueryResult;
     }
+    return filterBySearchQuery(queryResult);
+}
+
+function filterBySearchQuery(queryResult: QueryResult): QueryResult {
+    const query = useSelector((state: RootState) => state.search.query);
+    if (query === undefined) {
+        return queryResult;
+    }
+    if (queryResult.isError || queryResult.isLoading) {
+        return queryResult;
+    }
+    const data = queryResult.data.filter((file) => file.name.toLowerCase().includes(query.toLowerCase()));
+    return { ...queryResult, data };
 }
