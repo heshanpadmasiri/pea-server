@@ -20,6 +20,7 @@ export const SearchBar = () => {
             value={searchValue}
             onChangeText={onChange}
             defaultValue="search"
+            testID='search-text'
         />
         <TouchableOpacity onPress={clearSearch}>
             <Ionicons name="close-circle-outline" size={24} />

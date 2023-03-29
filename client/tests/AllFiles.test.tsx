@@ -97,4 +97,22 @@ describe('AllFiles', () => {
         }
         expect(screen.toJSON()).toMatchSnapshot()
     }, TIMEOUT);
+
+    test('search works', async () => {
+        const store = setupStore();
+        render(
+            <Provider store={store}>
+                <AllFiles />
+            </Provider>
+        );
+        await screen.findByTestId('received-tag', {}, { timeout: TIMEOUT });
+        const search_bar = await screen.findByTestId('search-text');
+        // const file_1 = await screen.queryByText('file 1.txt');
+        fireEvent(search_bar, 'onChangeText', 'file 1');
+        // console.log('file1: ', file_1)
+        // if (file_1 != null) {
+        //     await waitForElementToBeRemoved(() => file_1, { timeout: TIMEOUT });
+        // }
+        expect(screen.toJSON()).toMatchSnapshot()
+    }, TIMEOUT);
 });
