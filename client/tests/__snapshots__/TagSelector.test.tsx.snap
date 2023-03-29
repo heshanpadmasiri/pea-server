@@ -13,7 +13,7 @@ exports[`renders component 1`] = `
   <RCTScrollView
     style={
       {
-        "flex": 1,
+        "flex": 3,
       }
     }
     testID="received-tag"

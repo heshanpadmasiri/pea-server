@@ -12,6 +12,78 @@ exports[`VideoFiles renders component 1`] = `
   <View
     style={
       {
+        "alignItems": "center",
+        "flex": 0.25,
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+      }
+    }
+  >
+    <TextInput
+      defaultValue="search"
+      onChangeText={[Function]}
+      testID="search-text"
+    />
+    <View
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onClick={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      style={
+        {
+          "opacity": 1,
+        }
+      }
+    >
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": undefined,
+              "fontSize": 24,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      {
         "backgroundColor": "#ecf0f1",
         "flex": 1,
         "justifyContent": "center",
@@ -21,7 +93,7 @@ exports[`VideoFiles renders component 1`] = `
     <RCTScrollView
       style={
         {
-          "flex": 1,
+          "flex": 3,
         }
       }
       testID="received-tag"
@@ -405,6 +477,78 @@ exports[`VideoFiles tag selection works 1`] = `
   <View
     style={
       {
+        "alignItems": "center",
+        "flex": 0.25,
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+      }
+    }
+  >
+    <TextInput
+      defaultValue="search"
+      onChangeText={[Function]}
+      testID="search-text"
+    />
+    <View
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onClick={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      style={
+        {
+          "opacity": 1,
+        }
+      }
+    >
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": undefined,
+              "fontSize": 24,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      {
         "backgroundColor": "#ecf0f1",
         "flex": 1,
         "justifyContent": "center",
@@ -414,7 +558,7 @@ exports[`VideoFiles tag selection works 1`] = `
     <RCTScrollView
       style={
         {
-          "flex": 1,
+          "flex": 3,
         }
       }
       testID="received-tag"

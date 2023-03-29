@@ -11,7 +11,6 @@ const TagSelector = () => {
     const tags = result.data;
     const sortedTags = useMemo(() => {
         const sortedTags = tags?.slice()
-        // Sort posts in descending chronological order
         sortedTags?.sort()
         return sortedTags
     }, [tags])

@@ -4,6 +4,12 @@ const styles = StyleSheet.create({
         flex: 5,
         paddingHorizontal: 10,
     },
+    searchBar: {
+        flexDirection: 'row',
+        flex: 0.25,
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
     gallery: {
         flex: 1,
         backgroundColor: 'black'
@@ -17,7 +23,7 @@ const styles = StyleSheet.create({
         resizeMode:'contain',
     },
     tag_selector: {
-        flex: 1,
+        flex: 3,
     },
     switch_container: {
         flex: 1,

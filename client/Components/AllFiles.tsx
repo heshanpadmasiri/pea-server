@@ -1,4 +1,5 @@
 import { Text, FlatList, SafeAreaView } from 'react-native';
+import { SearchBar } from './SearchBar';
 import { getAllFiles } from '../utils/fileFiltering';
 import styles from '../utils/styles';
 import TagSelector from './TagSelector';
@@ -20,11 +21,12 @@ export default function AllFiles() {
     }
     else if (result.isSuccess) {
         content = (
-            <FlatList testID='received-files'style={{ flex: 1 }} data={result.data} renderItem={({ item }) => <Text>{item.name}</Text>} />
+            <FlatList testID='received-files' style={styles.safeArea} data={result.data} renderItem={({ item }) => <Text>{item.name}</Text>} />
         )
     }
     return (
         <SafeAreaView style={styles.safeArea}>
+            <SearchBar/>
             <TagSelector />
             {content}
         </SafeAreaView>
