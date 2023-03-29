@@ -12,6 +12,77 @@ exports[`VideoFiles renders component 1`] = `
   <View
     style={
       {
+        "alignItems": "center",
+        "flex": 0.25,
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+      }
+    }
+  >
+    <TextInput
+      defaultValue="search"
+      onChangeText={[Function]}
+    />
+    <View
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onClick={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      style={
+        {
+          "opacity": 1,
+        }
+      }
+    >
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": undefined,
+              "fontSize": 24,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      {
         "backgroundColor": "#ecf0f1",
         "flex": 1,
         "justifyContent": "center",
@@ -21,7 +92,7 @@ exports[`VideoFiles renders component 1`] = `
     <RCTScrollView
       style={
         {
-          "flex": 1,
+          "flex": 3,
         }
       }
       testID="received-tag"
@@ -119,19 +190,19 @@ exports[`VideoFiles renders component 1`] = `
             "id": "1",
             "index": 0,
             "title": "file 1.mp4",
-            "url": "http://localhost:8080/content/1",
+            "url": "http://192.168.8.176:8080/content/1",
           },
           {
             "id": "2",
             "index": 1,
             "title": "file 2.mp4",
-            "url": "http://localhost:8080/content/2",
+            "url": "http://192.168.8.176:8080/content/2",
           },
           {
             "id": "3",
             "index": 2,
             "title": "file 3.mp4",
-            "url": "http://localhost:8080/content/3",
+            "url": "http://192.168.8.176:8080/content/3",
           },
         ]
       }
@@ -201,7 +272,7 @@ exports[`VideoFiles renders component 1`] = `
                     "source": {
                       "headers": undefined,
                       "overridingExtension": null,
-                      "uri": "http://localhost:8080/content/1",
+                      "uri": "http://192.168.8.176:8080/content/1",
                     },
                     "status": {
                       "isLooping": true,
@@ -279,7 +350,7 @@ exports[`VideoFiles renders component 1`] = `
                     "source": {
                       "headers": undefined,
                       "overridingExtension": null,
-                      "uri": "http://localhost:8080/content/2",
+                      "uri": "http://192.168.8.176:8080/content/2",
                     },
                     "status": {
                       "isLooping": true,
@@ -357,7 +428,7 @@ exports[`VideoFiles renders component 1`] = `
                     "source": {
                       "headers": undefined,
                       "overridingExtension": null,
-                      "uri": "http://localhost:8080/content/3",
+                      "uri": "http://192.168.8.176:8080/content/3",
                     },
                     "status": {
                       "isLooping": true,
@@ -405,6 +476,77 @@ exports[`VideoFiles tag selection works 1`] = `
   <View
     style={
       {
+        "alignItems": "center",
+        "flex": 0.25,
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+      }
+    }
+  >
+    <TextInput
+      defaultValue="search"
+      onChangeText={[Function]}
+    />
+    <View
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessibilityValue={
+        {
+          "max": undefined,
+          "min": undefined,
+          "now": undefined,
+          "text": undefined,
+        }
+      }
+      accessible={true}
+      collapsable={false}
+      focusable={true}
+      onClick={[Function]}
+      onResponderGrant={[Function]}
+      onResponderMove={[Function]}
+      onResponderRelease={[Function]}
+      onResponderTerminate={[Function]}
+      onResponderTerminationRequest={[Function]}
+      onStartShouldSetResponder={[Function]}
+      style={
+        {
+          "opacity": 1,
+        }
+      }
+    >
+      <Text
+        allowFontScaling={false}
+        selectable={false}
+        style={
+          [
+            {
+              "color": undefined,
+              "fontSize": 24,
+            },
+            undefined,
+            {
+              "fontFamily": "ionicons",
+              "fontStyle": "normal",
+              "fontWeight": "normal",
+            },
+            {},
+          ]
+        }
+      >
+        
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      {
         "backgroundColor": "#ecf0f1",
         "flex": 1,
         "justifyContent": "center",
@@ -414,7 +556,7 @@ exports[`VideoFiles tag selection works 1`] = `
     <RCTScrollView
       style={
         {
-          "flex": 1,
+          "flex": 3,
         }
       }
       testID="received-tag"
@@ -512,13 +654,13 @@ exports[`VideoFiles tag selection works 1`] = `
             "id": "2",
             "index": 0,
             "title": "file 2.mp4",
-            "url": "http://localhost:8080/content/2",
+            "url": "http://192.168.8.176:8080/content/2",
           },
           {
             "id": "3",
             "index": 1,
             "title": "file 3.mp4",
-            "url": "http://localhost:8080/content/3",
+            "url": "http://192.168.8.176:8080/content/3",
           },
         ]
       }
@@ -588,7 +730,7 @@ exports[`VideoFiles tag selection works 1`] = `
                     "source": {
                       "headers": undefined,
                       "overridingExtension": null,
-                      "uri": "http://localhost:8080/content/2",
+                      "uri": "http://192.168.8.176:8080/content/2",
                     },
                     "status": {
                       "isLooping": true,
@@ -666,7 +808,7 @@ exports[`VideoFiles tag selection works 1`] = `
                     "source": {
                       "headers": undefined,
                       "overridingExtension": null,
-                      "uri": "http://localhost:8080/content/3",
+                      "uri": "http://192.168.8.176:8080/content/3",
                     },
                     "status": {
                       "isLooping": true,
