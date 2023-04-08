@@ -356,14 +356,14 @@ async fn get_content(
             Ok(path) => Ok(actix_files::NamedFile::open(path)?),
             Err(e) => {
                 error!("failed to get file path: {}", e);
-                return Err(actix_web::error::ErrorBadRequest("failed to get file path"));
+                Err(actix_web::error::ErrorBadRequest("failed to get file path"))
             }
         },
         Err(_) => {
             error!("failed find a file with the given id");
-            return Err(actix_web::error::ErrorBadRequest(
+            Err(actix_web::error::ErrorBadRequest(
                 "failed find a file with the given id",
-            ));
+            ))
         }
     }
 }

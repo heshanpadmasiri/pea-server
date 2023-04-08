@@ -36,7 +36,6 @@ pub enum Message {
     GetFilesOfTags(Vec<String>, InfallibleMultiFileTransmitter),
     GetFilePath(u64, FilePathTransmitter),
     CreateFile(String, Vec<u8>, FallibleUnitTransmitter),
-    // TODO: may be we need Arc here
     ShutDown,
 }
 
@@ -105,7 +104,7 @@ impl StorageServer {
                     .unwrap();
             }
             Message::ShutDown => {
-                return;
+                panic!("should not be called");
             }
         }
     }
