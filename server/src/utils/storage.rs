@@ -7,6 +7,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use crossbeam_channel::Sender;
 use log::{debug, error, info};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Clone)]
@@ -26,6 +27,87 @@ pub enum FileErr {
     IdInvalid,
     DBError,
     FailedToCreateFile,
+}
+
+pub enum Message {
+    GetAllFiles(InfallibleMultiFileTransmitter),
+    GetAllTags(InfallibleMultiStringTransmitter),
+    GetFilesOfType(String, InfallibleMultiFileTransmitter),
+    GetFilesOfTags(Vec<String>, InfallibleMultiFileTransmitter),
+    GetFilePath(u64, FilePathTransmitter),
+    CreateFile(String, Vec<u8>, FallibleUnitTransmitter),
+    ShutDown,
+}
+
+// TODO: get rid of infallible transmitters and send errors where needed
+pub type InfallibleMultiFileTransmitter = Sender<Vec<FileMetadata>>;
+pub type InfallibleMultiStringTransmitter = Sender<Vec<String>>;
+pub type FilePathTransmitter = Sender<Result<PathBuf, FileErr>>;
+pub type FallibleUnitTransmitter = Sender<Result<(), FileErr>>;
+
+pub struct StorageServer {
+    index: FileIndex,
+}
+
+impl StorageServer {
+    fn new(index_file: &Path) -> Self {
+        Self {
+            index: FileIndex::new(index_file),
+        }
+    }
+
+    pub fn initialize(index_file: &Path) -> Sender<Message> {
+        let (tx, rx) = crossbeam_channel::unbounded();
+        let mut server = Self::new(index_file);
+        std::thread::spawn(move || {
+            server.run(rx);
+        });
+        tx
+    }
+
+    pub fn run(&mut self, rx: crossbeam_channel::Receiver<Message>) {
+        loop {
+            match rx.recv() {
+                Ok(message) => {
+                    if let Message::ShutDown = message {
+                        break;
+                    }
+                    self.handle_message(message);
+                }
+                Err(_) => {
+                    error!("failed to receive message");
+                    return;
+                }
+            }
+        }
+    }
+
+    fn handle_message(&mut self, message: Message) {
+        match message {
+            Message::GetAllFiles(tx) => {
+                tx.send(self.index.files()).unwrap();
+            }
+            Message::GetAllTags(tx) => {
+                tx.send(self.index.tags()).unwrap();
+            }
+            Message::GetFilesOfType(ty, tx) => {
+                tx.send(self.index.files_of_type(ty)).unwrap();
+            }
+            Message::GetFilesOfTags(tags, tx) => {
+                tx.send(self.index.files_of_tags(&tags)).unwrap();
+            }
+            Message::GetFilePath(id, tx) => {
+                tx.send(self.index.get_file_path(id)).unwrap();
+            }
+            Message::CreateFile(file_name, content, tx) => {
+                tx.send(create_file(&mut self.index, file_name, &content))
+                    .unwrap();
+            }
+            Message::ShutDown => {
+                panic!("should not be called");
+            }
+        }
+    }
 }
 
 impl std::fmt::Display for FileErr {
@@ -85,7 +167,7 @@ impl FileIndex {
             .collect()
     }
 
-    pub fn files_of_tag(&self, tags: &Vec<String>) -> Vec<FileMetadata> {
+    pub fn files_of_tags(&self, tags: &Vec<String>) -> Vec<FileMetadata> {
         self.db
             .values()
             .filter(|each| match &each.tags {
@@ -136,7 +218,7 @@ impl FileIndex {
 
 pub fn create_file(
     index: &mut FileIndex,
-    filen_name: String,
+    file_name: String,
     content: &[u8],
 ) -> Result<(), FileErr> {
     let received_dir =
@@ -149,7 +231,7 @@ pub fn create_file(
             return Err(FileErr::FailedToCreateFile);
         }
     }
-    let path = received_dir.join(filen_name);
+    let path = received_dir.join(file_name);
     match File::create(&path) {
         Ok(mut file) => match Write::write_all(&mut file, content) {
             Ok(_) => index.add_file(&path),
@@ -199,7 +281,7 @@ fn serialize_db(path: &Path, db: &FileDB) -> Result<(), FileErr> {
                         Ok(())
                     }
                     Err(err) => {
-                        error!("faild to write to index file due to {err:?}");
+                        error!("failed to write to index file due to {err:?}");
                         Err(FileErr::DBError)
                     }
                 }

@@ -2,17 +2,17 @@ use std::{
     env,
     net::{self, SocketAddr},
     path::PathBuf,
-    sync::RwLock,
+    thread,
     time::Duration,
     vec::IntoIter,
 };
 
 use futures_util::StreamExt as _;
-use log::{debug, info};
+use log::{debug, error, info};
 use pea_server::utils::{
     get_local_ip_address,
     registry::{register_server, unregister_server, RegistryData},
-    storage::{create_file, FileIndex, FileMetadata},
+    storage::{FileMetadata, Message, StorageServer},
 };
 
 struct Config {
@@ -22,7 +22,7 @@ struct Config {
 }
 
 struct ServerState {
-    file_index: RwLock<FileIndex>,
+    storage_server_transmitter: crossbeam_channel::Sender<Message>,
 }
 
 #[tokio::main]
@@ -59,8 +59,9 @@ async fn main() -> std::io::Result<()> {
     } else {
         None
     };
+    let tx = StorageServer::initialize(&config.index_path);
     tokio::spawn(async move {
-        create_and_run_server(config)
+        create_and_run_server(config, tx.clone())
             .expect("server creation should not fail")
             .await
             .expect("server running should not fail");
@@ -68,7 +69,10 @@ async fn main() -> std::io::Result<()> {
     if let Some(server) = &register_data {
         register_server(server).expect("expect server registration to succeed");
     }
-    input_listener(register_data);
+    let input_handler = thread::spawn(|| {
+        input_listener(register_data);
+    });
+    input_handler.join().expect("input handler should not fail");
     Ok(())
 }
 
@@ -97,10 +101,13 @@ fn shutdown_server(server: Option<RegistryData>) {
     std::process::exit(0);
 }
 
-fn create_and_run_server(config: Config) -> std::io::Result<actix_web::dev::Server> {
+fn create_and_run_server(
+    config: Config,
+    storage_server_transmitter: crossbeam_channel::Sender<Message>,
+) -> std::io::Result<actix_web::dev::Server> {
     info!("starting server at: {:?}", config.address.to_socket_addrs());
     let server_state = actix_web::web::Data::new(ServerState {
-        file_index: RwLock::new(FileIndex::new(&config.index_path)),
+        storage_server_transmitter,
     });
     let server = actix_web::HttpServer::new(move || {
         let cors = actix_cors::Cors::permissive();
@@ -155,33 +162,58 @@ async fn index(_req: actix_web::HttpRequest) -> actix_web::Result<actix_files::N
 type State = actix_web::web::Data<ServerState>;
 
 async fn get_files(state: State) -> actix_web::HttpResponse {
-    info!("Get file request received");
-    let index = state.file_index.read().unwrap();
-    let files = all_files(&index);
-    let body = serde_json::to_string(&files).unwrap();
-    actix_web::HttpResponse::Ok()
-        .content_type("application/json")
-        .body(body)
+    info!("get file request received");
+    let storage_tx = &state.storage_server_transmitter.clone();
+    let (tx, rx) = crossbeam_channel::bounded(1);
+    if storage_tx.send(Message::GetAllFiles(tx)).is_err() {
+        error!("failed to send get all files to storage server");
+        return actix_web::HttpResponse::InternalServerError().finish();
+    }
+    match rx.recv() {
+        Ok(files) => {
+            let body = serde_json::to_string(&files).unwrap();
+            actix_web::HttpResponse::Ok()
+                .content_type("application/json")
+                .body(body)
+        }
+        Err(_) => {
+            error!("failed to receive files from storage server");
+            actix_web::HttpResponse::InternalServerError().finish()
+        }
+    }
 }
 
 async fn get_tags(state: State) -> actix_web::HttpResponse {
-    let index = state.file_index.read().unwrap();
-    let tags = index.tags();
-    let body = serde_json::to_string(&tags).unwrap();
-    actix_web::HttpResponse::Ok()
-        .content_type("application/json")
-        .body(body)
+    info!("get tags request received");
+    let storage_tx = &state.storage_server_transmitter.clone();
+    let (tx, rx) = crossbeam_channel::bounded(1);
+    if storage_tx.send(Message::GetAllTags(tx)).is_err() {
+        error!("failed to send get all tags to storage server");
+        return actix_web::HttpResponse::InternalServerError().finish();
+    }
+    match rx.recv() {
+        Ok(tags) => {
+            let body = serde_json::to_string(&tags).unwrap();
+            actix_web::HttpResponse::Ok()
+                .content_type("application/json")
+                .body(body)
+        }
+        Err(_) => {
+            error!("failed to receive files from storage server");
+            actix_web::HttpResponse::InternalServerError().finish()
+        }
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
-pub struct TagQueryData {
+struct TagQueryData {
     // if ty is "" then it is ignored
     ty: String,
     tags: Vec<String>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
-pub struct TagQuery {
+struct TagQuery {
     data: TagQueryData,
 }
 
@@ -189,22 +221,38 @@ async fn get_files_by_tags(
     query: actix_web::web::Json<TagQuery>,
     state: State,
 ) -> actix_web::HttpResponse {
-    let index = state.file_index.read().unwrap();
     let data = &query.data;
-    let files = if data.ty.is_empty() {
-        index.files_of_tag(&data.tags)
-    } else {
-        index
-            .files_of_tag(&data.tags)
-            .into_iter()
-            .filter(|file| file.ty == data.ty)
-            .collect()
-    };
-    let file_data: Vec<FileData> = files.into_iter().map(FileData::from).collect();
-    let body = serde_json::to_string(&file_data).unwrap();
-    actix_web::HttpResponse::Ok()
-        .content_type("application/json")
-        .body(body)
+    info!("get files by request received with query: {:?}", &data);
+    let storage_tx = &state.storage_server_transmitter.clone();
+    let (tx, rx) = crossbeam_channel::bounded(1);
+    if storage_tx
+        .send(Message::GetFilesOfTags(data.tags.clone(), tx))
+        .is_err()
+    {
+        error!("failed to send get files of tags to storage server");
+        return actix_web::HttpResponse::InternalServerError().finish();
+    }
+    match rx.recv() {
+        Ok(files) => {
+            let files = if data.ty.is_empty() {
+                files
+            } else {
+                files
+                    .into_iter()
+                    .filter(|file| file.ty == data.ty)
+                    .collect()
+            };
+            let file_data: Vec<FileData> = files.into_iter().map(|f| f.into()).collect();
+            let body = serde_json::to_string(&file_data).unwrap();
+            actix_web::HttpResponse::Ok()
+                .content_type("application/json")
+                .body(body)
+        }
+        Err(_) => {
+            error!("failed to receive files from storage server");
+            actix_web::HttpResponse::InternalServerError().finish()
+        }
+    }
 }
 
 async fn post_file(
@@ -212,6 +260,7 @@ async fn post_file(
     state: State,
 ) -> actix_web::Result<actix_web::HttpResponse> {
     while let Some(item) = payload.next().await {
+        info!("post file request received");
         let mut field = item?;
         let content_disposition = field.content_disposition();
         match content_disposition.get_filename() {
@@ -226,9 +275,30 @@ async fn post_file(
                         content.push(each);
                     }
                 }
-                let mut index = state.file_index.write().unwrap();
-                if create_file(&mut index, file_name, &content).is_err() {
+                info!("creating {} with size {} bytes", file_name, content.len());
+                let storage_tx = &state.storage_server_transmitter.clone();
+                let (tx, rx) = crossbeam_channel::bounded(1);
+                if storage_tx
+                    .send(Message::CreateFile(file_name, content, tx))
+                    .is_err()
+                {
+                    error!("failed to send create file to storage server");
                     return Ok(actix_web::HttpResponse::InternalServerError().into());
+                }
+                match rx.recv() {
+                    Ok(result) => match result {
+                        Ok(_) => {
+                            info!("file created successfully");
+                        }
+                        Err(e) => {
+                            error!("failed to create file: {}", e);
+                            return Ok(actix_web::HttpResponse::InternalServerError().into());
+                        }
+                    },
+                    Err(_) => {
+                        error!("failed to receive create file response from storage server");
+                        return Ok(actix_web::HttpResponse::InternalServerError().into());
+                    }
                 }
             }
         }
@@ -239,31 +309,63 @@ async fn post_file(
 async fn get_file_by_type(
     path: actix_web::web::Path<String>,
     state: State,
-) -> actix_web::Result<actix_web::HttpResponse> {
+) -> actix_web::HttpResponse {
     let file_type = path.into_inner();
-    info!("Get file by type request received: {}", file_type);
-    let index = state.file_index.read().unwrap();
-    let files: Vec<FileData> = index
-        .files_of_type(file_type)
-        .into_iter()
-        .map(|each| each.into())
-        .collect();
-    let body = serde_json::to_string(&files).unwrap();
-    Ok(actix_web::HttpResponse::Ok()
-        .content_type("application/json")
-        .body(body))
+    info!("get file by type request received: {}", file_type);
+    let storage_tx = &state.storage_server_transmitter.clone();
+    let (tx, rx) = crossbeam_channel::bounded(1);
+    if storage_tx
+        .send(Message::GetFilesOfType(file_type, tx))
+        .is_err()
+    {
+        error!("failed to send get files of tags to storage server");
+        return actix_web::HttpResponse::InternalServerError().finish();
+    }
+    match rx.recv() {
+        Ok(files) => {
+            let files: Vec<FileData> = files.into_iter().map(|each| each.into()).collect();
+            let body = serde_json::to_string(&files).unwrap();
+            actix_web::HttpResponse::Ok()
+                .content_type("application/json")
+                .body(body)
+        }
+        Err(_) => {
+            error!("failed to receive files from storage server");
+            actix_web::HttpResponse::InternalServerError().finish()
+        }
+    }
 }
 
 async fn get_content(
     req: actix_web::HttpRequest,
     state: State,
 ) -> actix_web::Result<actix_files::NamedFile> {
-    let index = state.file_index.read().unwrap();
     let file_name: String = req.match_info().query("file_name").parse().unwrap();
     let file_id = file_name.trim().parse::<u64>().unwrap();
-    info!("Get file request received: {}", file_name);
-    let file_path = index.get_file_path(file_id).unwrap();
-    Ok(actix_files::NamedFile::open(file_path)?)
+    info!("get file request received: {}", file_name);
+    let storage_tx = &state.storage_server_transmitter.clone();
+    let (tx, rx) = crossbeam_channel::bounded(1);
+    if storage_tx.send(Message::GetFilePath(file_id, tx)).is_err() {
+        error!("failed to send get files of tags to storage server");
+        return Err(actix_web::error::ErrorBadRequest(
+            "failed to send get files of tags to storage server",
+        ));
+    }
+    match rx.recv() {
+        Ok(result) => match result {
+            Ok(path) => Ok(actix_files::NamedFile::open(path)?),
+            Err(e) => {
+                error!("failed to get file path: {}", e);
+                Err(actix_web::error::ErrorBadRequest("failed to get file path"))
+            }
+        },
+        Err(_) => {
+            error!("failed find a file with the given id");
+            Err(actix_web::error::ErrorBadRequest(
+                "failed find a file with the given id",
+            ))
+        }
+    }
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -294,10 +396,6 @@ impl From<FileMetadata> for FileData {
     }
 }
 
-fn all_files(index: &FileIndex) -> Vec<FileData> {
-    index.files().into_iter().map(|each| each.into()).collect()
-}
-
 #[cfg(test)]
 mod tests {
     use std::{
@@ -305,7 +403,6 @@ mod tests {
         fs::File,
         io::{Read, Write},
         path::PathBuf,
-        sync::RwLock,
     };
 
     use crate::{
@@ -318,7 +415,7 @@ mod tests {
         web::{self, Bytes},
         App,
     };
-    use pea_server::utils::storage::{clean_up_dir, FileIndex, FileMetadata};
+    use pea_server::utils::storage::{clean_up_dir, FileIndex, FileMetadata, StorageServer};
     use std::sync::Once;
 
     static INIT: Once = Once::new();
@@ -333,7 +430,8 @@ mod tests {
                 address: Box::new(format!("localhost:{}", 5000)),
                 index_path: PathBuf::from(TEST_INDEX),
             };
-            create_and_run_server(config)
+            let tx = StorageServer::initialize(&config.index_path);
+            create_and_run_server(config, tx)
                 .expect("expect server startup to succeed")
                 .await
                 .expect("expect sever running to succeed");
@@ -354,11 +452,12 @@ mod tests {
     #[actix_web::test]
     async fn can_upload_files() {
         initialize();
-        // FIXME: chnage the test file index
         let server = test::init_service(
             App::new()
                 .app_data(actix_web::web::Data::new(ServerState {
-                    file_index: RwLock::new(FileIndex::new(&PathBuf::from(TEST_INDEX))),
+                    storage_server_transmitter: StorageServer::initialize(&PathBuf::from(
+                        TEST_INDEX,
+                    )),
                 }))
                 .route("/file", web::post().to(post_file)),
         )
@@ -433,7 +532,7 @@ mod tests {
         let server = test::init_service(
             App::new()
                 .app_data(actix_web::web::Data::new(ServerState {
-                    file_index: RwLock::new(FileIndex::new(&test_index_path)),
+                    storage_server_transmitter: StorageServer::initialize(&test_index_path),
                 }))
                 .route("/files/{type}", web::get().to(get_file_by_type)),
         )
@@ -483,7 +582,7 @@ mod tests {
         let server = test::init_service(
             App::new()
                 .app_data(actix_web::web::Data::new(ServerState {
-                    file_index: RwLock::new(FileIndex::new(&test_index_path)),
+                    storage_server_transmitter: StorageServer::initialize(&test_index_path),
                 }))
                 .route("/tags", web::get().to(get_tags)),
         )
@@ -541,7 +640,7 @@ mod tests {
         let server = test::init_service(
             App::new()
                 .app_data(actix_web::web::Data::new(ServerState {
-                    file_index: RwLock::new(FileIndex::new(&test_index_path)),
+                    storage_server_transmitter: StorageServer::initialize(&test_index_path),
                 }))
                 .route("/query", web::post().to(get_files_by_tags)),
         )

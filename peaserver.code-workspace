@@ -9,5 +9,14 @@
         {
             "path": "server"
         }
-    ]
+    ],
+    "settings": {
+        "cSpell.words": [
+            "actix",
+            "Addrs",
+            "canonicalize",
+            "crossterm",
+            "Hasher"
+        ]
+    }
 }
