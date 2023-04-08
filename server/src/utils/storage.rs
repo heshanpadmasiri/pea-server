@@ -37,7 +37,7 @@ pub enum Message {
     GetFilePath(u64, FilePathTransmitter),
     CreateFile(String, Vec<u8>, FallibleUnitTransmitter),
     // TODO: may be we need Arc here
-    ExitOnCompletion()
+    ShutDown
 }
 
 // TODO: get rid of infallible transmitters and send errors where needed
@@ -70,7 +70,7 @@ impl StorageServer {
         loop {
             match rx.recv() {
                 Ok(message) => {
-                    if let Message::ExitOnCompletion() = message {
+                    if let Message::ShutDown = message {
                         break;
                     }
                     self.handle_message(message);
@@ -103,7 +103,7 @@ impl StorageServer {
             Message::CreateFile(file_name, content, tx) => {
                 tx.send(create_file(&mut self.index, file_name, &content)).unwrap();
             }
-            Message::ExitOnCompletion() => {
+            Message::ShutDown => {
                 return;
             }
         }
