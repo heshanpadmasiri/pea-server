@@ -4,7 +4,7 @@ use std::{
     path::PathBuf,
     sync::RwLock,
     time::Duration,
-    vec::IntoIter,
+    vec::IntoIter, thread,
 };
 
 use futures_util::StreamExt as _;
@@ -68,7 +68,8 @@ async fn main() -> std::io::Result<()> {
     if let Some(server) = &register_data {
         register_server(server).expect("expect server registration to succeed");
     }
-    input_listener(register_data);
+    let input_handler = thread::spawn(|| { input_listener(register_data); });
+    input_handler.join().expect("input handler should not fail");
     Ok(())
 }
 
