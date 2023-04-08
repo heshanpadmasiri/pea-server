@@ -282,7 +282,7 @@ fn serialize_db(path: &Path, db: &FileDB) -> Result<(), FileErr> {
                         Ok(())
                     }
                     Err(err) => {
-                        error!("faild to write to index file due to {err:?}");
+                        error!("failed to write to index file due to {err:?}");
                         Err(FileErr::DBError)
                     }
                 }

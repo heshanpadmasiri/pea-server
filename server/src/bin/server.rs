@@ -169,8 +169,7 @@ async fn get_files(state: State) -> actix_web::HttpResponse {
         error!("failed to send get all files to storage server");
         return actix_web::HttpResponse::InternalServerError().finish();
     }
-    let files = rx.recv();
-    match files {
+    match rx.recv() {
         Ok(files) => {
             let body = serde_json::to_string(&files).unwrap();
             actix_web::HttpResponse::Ok()
@@ -192,8 +191,7 @@ async fn get_tags(state: State) -> actix_web::HttpResponse {
         error!("failed to send get all tags to storage server");
         return actix_web::HttpResponse::InternalServerError().finish();
     }
-    let tags = rx.recv();
-    match tags {
+    match rx.recv() {
         Ok(tags) => {
             let body = serde_json::to_string(&tags).unwrap();
             actix_web::HttpResponse::Ok()
@@ -231,8 +229,7 @@ async fn get_files_by_tags(
         error!("failed to send get files of tags to storage server");
         return actix_web::HttpResponse::InternalServerError().finish();
     }
-    let files = rx.recv();
-    match files {
+    match rx.recv() {
         Ok(files) => {
             let files = if data.ty.is_empty() {
                 files
@@ -448,7 +445,6 @@ mod tests {
     #[actix_web::test]
     async fn can_upload_files() {
         initialize();
-        // FIXME: chnage the test file index
         let server = test::init_service(
             App::new()
                 .app_data(actix_web::web::Data::new(ServerState {
