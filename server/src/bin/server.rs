@@ -225,7 +225,10 @@ async fn get_files_by_tags(
     info!("get files by request received with query: {:?}", &data);
     let storage_tx = &state.storage_server_transmitter.clone();
     let (tx, rx) = crossbeam_channel::bounded(1);
-    if storage_tx.send(Message::GetFilesOfTags(data.tags.clone(), tx)).is_err() {
+    if storage_tx
+        .send(Message::GetFilesOfTags(data.tags.clone(), tx))
+        .is_err()
+    {
         error!("failed to send get files of tags to storage server");
         return actix_web::HttpResponse::InternalServerError().finish();
     }
@@ -275,22 +278,23 @@ async fn post_file(
                 info!("creating {} with size {} bytes", file_name, content.len());
                 let storage_tx = &state.storage_server_transmitter.clone();
                 let (tx, rx) = crossbeam_channel::bounded(1);
-                if storage_tx.send(Message::CreateFile(file_name, content, tx)).is_err() {
+                if storage_tx
+                    .send(Message::CreateFile(file_name, content, tx))
+                    .is_err()
+                {
                     error!("failed to send create file to storage server");
                     return Ok(actix_web::HttpResponse::InternalServerError().into());
                 }
                 match rx.recv() {
-                    Ok(result) => {
-                        match result {
-                            Ok(_) => {
-                                info!("file created successfully");
-                            }
-                            Err(e) => {
-                                error!("failed to create file: {}", e);
-                                return Ok(actix_web::HttpResponse::InternalServerError().into());
-                            }
+                    Ok(result) => match result {
+                        Ok(_) => {
+                            info!("file created successfully");
                         }
-                    }
+                        Err(e) => {
+                            error!("failed to create file: {}", e);
+                            return Ok(actix_web::HttpResponse::InternalServerError().into());
+                        }
+                    },
                     Err(_) => {
                         error!("failed to receive create file response from storage server");
                         return Ok(actix_web::HttpResponse::InternalServerError().into());
@@ -310,7 +314,10 @@ async fn get_file_by_type(
     info!("get file by type request received: {}", file_type);
     let storage_tx = &state.storage_server_transmitter.clone();
     let (tx, rx) = crossbeam_channel::bounded(1);
-    if storage_tx.send(Message::GetFilesOfType(file_type, tx)).is_err() {
+    if storage_tx
+        .send(Message::GetFilesOfType(file_type, tx))
+        .is_err()
+    {
         error!("failed to send get files of tags to storage server");
         return actix_web::HttpResponse::InternalServerError().finish();
     }
@@ -340,23 +347,23 @@ async fn get_content(
     let (tx, rx) = crossbeam_channel::bounded(1);
     if storage_tx.send(Message::GetFilePath(file_id, tx)).is_err() {
         error!("failed to send get files of tags to storage server");
-        return Err(actix_web::error::ErrorBadRequest("failed to send get files of tags to storage server"));
+        return Err(actix_web::error::ErrorBadRequest(
+            "failed to send get files of tags to storage server",
+        ));
     }
     match rx.recv() {
-        Ok(result) => {
-            match result {
-                Ok(path) => {
-                    Ok(actix_files::NamedFile::open(path)?)
-                }
-                Err(e) => {
-                    error!("failed to get file path: {}", e);
-                    return Err(actix_web::error::ErrorBadRequest("failed to get file path"));
-                }
+        Ok(result) => match result {
+            Ok(path) => Ok(actix_files::NamedFile::open(path)?),
+            Err(e) => {
+                error!("failed to get file path: {}", e);
+                return Err(actix_web::error::ErrorBadRequest("failed to get file path"));
             }
-        }
+        },
         Err(_) => {
             error!("failed find a file with the given id");
-            return Err(actix_web::error::ErrorBadRequest("failed find a file with the given id"));
+            return Err(actix_web::error::ErrorBadRequest(
+                "failed find a file with the given id",
+            ));
         }
     }
 }
@@ -448,7 +455,9 @@ mod tests {
         let server = test::init_service(
             App::new()
                 .app_data(actix_web::web::Data::new(ServerState {
-                    storage_server_transmitter: StorageServer::initialize(&PathBuf::from(TEST_INDEX))
+                    storage_server_transmitter: StorageServer::initialize(&PathBuf::from(
+                        TEST_INDEX,
+                    )),
                 }))
                 .route("/file", web::post().to(post_file)),
         )

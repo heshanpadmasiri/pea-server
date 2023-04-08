@@ -37,7 +37,7 @@ pub enum Message {
     GetFilePath(u64, FilePathTransmitter),
     CreateFile(String, Vec<u8>, FallibleUnitTransmitter),
     // TODO: may be we need Arc here
-    ShutDown
+    ShutDown,
 }
 
 // TODO: get rid of infallible transmitters and send errors where needed
@@ -101,7 +101,8 @@ impl StorageServer {
                 tx.send(self.index.get_file_path(id)).unwrap();
             }
             Message::CreateFile(file_name, content, tx) => {
-                tx.send(create_file(&mut self.index, file_name, &content)).unwrap();
+                tx.send(create_file(&mut self.index, file_name, &content))
+                    .unwrap();
             }
             Message::ShutDown => {
                 return;
@@ -109,7 +110,6 @@ impl StorageServer {
         }
     }
 }
-
 
 impl std::fmt::Display for FileErr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
