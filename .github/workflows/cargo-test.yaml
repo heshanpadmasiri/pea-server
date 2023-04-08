@@ -44,9 +44,6 @@ jobs:
           filters: |
             src:
               - 'server/**'
-        # run only if some file in 'src' folder was changed
-      - if: steps.changes.outputs.src == 'true'
-        run: ...
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
